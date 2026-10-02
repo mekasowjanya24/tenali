@@ -14,7 +14,7 @@ Architecturally, Tenali is structured as a decoupled client-server web applicati
 
 1. **Frontend Client (`client/`)**: Built with React 19 and Vite, the user interface delivers an interactive single-page application. Learners interact with modular topic drills, visual math playgrounds, gamified rewards (XP coins), and diagnostic evaluations. The client communicates with backend APIs using RESTful endpoints and Socket.IO for live multiplayer sessions.
 2. **Backend Engine (`server/`)**: Built on Node.js and Express, the server houses the computational core of the platform. Rather than querying questions from persistent storage, 93 modular `*-api` route pairs algorithmically construct problems, validate student responses, and provide detailed step-by-step explanations via dedicated resolvers (`server/explanations.js` and `server/hints/hintResolvers.js`).
-3. **Adaptive Logic & Knowledge Tracing**: The backend incorporates Bayesian Knowledge Tracing (`server/lib/bkt.js`) and tiered difficulty heuristics to model student skill acquisition and continuously calibrate challenge levels.
+3. **Adaptive Logic & Knowledge Tracing**: The backend implements Bayesian Knowledge Tracing (`server/lib/bkt.js`) with unit test verification and a memory decay priority function for the daily warmup system (`server/lib/dailyWarmup.js`). While BKT is fully implemented as an isolated mathematical engine, it is not yet fully wired into the end-to-end learner session and mastery tracking pipeline (a task tracked under Issue #289 to connect BKT into `server/lil/masteryEngine.js`, which currently relies on streak-based thresholds).
 4. **Misconception Detection Pipeline**: Subsystems such as the Monsters framework intercept client evaluation responses via custom `fetch` interceptors (`client/src/monsters/fetchInterceptor.js`), normalize user inputs against problem stem caches, classify specific cognitive misconceptions (e.g., Bracketeer for distribution errors, Sign Swapper for negative number operations), and dispatch UI feedback to reinforce foundational concepts.
 5. **Data Layer & Fallbacks**: The system utilizes MongoDB through Mongoose for persistent learner profiles, auth tokens, and session telemetry, with in-memory fallbacks for development portability.
 
@@ -76,10 +76,10 @@ During my code inspection and lint investigation across the frontend client, I i
 
 Based on the architectural gaps identified in Section 4, I propose the following targeted improvements:
 
-### 1. Automated ESLint Suppression Pruning in CI Check Pipeline
-- **What**: Introduce a mandatory check or automated pre-push step that runs `npx eslint . --prune-suppressions` to ensure `client/eslint-suppressions.json` never retains stale entries.
-- **Why**: Eliminates developer friction and prevents discrepancies between clean source code and obsolete baseline counts.
-- **How**: Add an npm script `"lint:check-suppressions": "eslint . --pass-on-unpruned-suppressions"` or add `--prune-suppressions` validation to `.github/workflows/test.yml` under the `client-lint` job, flagging a PR if the suppressions file contains phantom entries.
+### 1. CI Validation for Stale ESLint Baseline Suppressions
+- **What**: Enhance the continuous integration lint job to validate suppression freshness, detecting and failing when obsolete or unused suppressions exist in `client/eslint-suppressions.json` so contributors are prompted to prune them before merging.
+- **Why**: Prevents phantom suppression debt from accumulating and ensures clean source files are not shadowed by stale baseline entries that block contributors during local lint runs.
+- **How**: ESLint 9's suppression system naturally exits with code 1 when unpruned suppressions remain. Ensure the `client-lint` job in `.github/workflows/test.yml` (and an accompanying local npm script such as `"lint:check-suppressions"`) runs ESLint without suppressing unpruned errors, reporting any obsolete entries so contributors can prune them locally using `npx eslint . --prune-suppressions` as specified in CONTRIBUTING.md.
 
 ### 2. Streamlining Concurrency and Cleanup in `fetchInterceptor.js`
 - **What**: Remove the orphaned `_appendQueue` variable and update module documentation to reflect direct synchronous storage appending.
