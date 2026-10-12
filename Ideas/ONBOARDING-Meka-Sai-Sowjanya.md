@@ -28,7 +28,7 @@ Tenali is an active repository with over 1,100 commits, 120+ merged pull request
 - **Interactive Labs and Visualizations**: Modules such as `VisualMathLabRedux`, `BearingsLabApp`, `CrossSectionApp`, and `WaterJugLab` provide dynamic SVG/Canvas-based visual manipulatives to anchor abstract formulas in spatial intuition.
 - **Pedagogical Hint System**: A tiered hint architecture (`client/src/components/HintSystem/`) offers progressive scaffolding: Level 1 provides conceptual nudges, Level 2 offers partial steps, and Level 3 reveals step-by-step worked solutions backed by XP economy balances.
 - **Misconception Architecture ("Monsters")**: Complete subsystem featuring automated fetch interception, real-time toast alerts (`MonsterToast`), progress tracking (`monsterStore.js`), interactive detail modals (`MonsterDetail.jsx`), and dedicated guided remediation flows (`GuidedSolver.jsx`, `CureFlow.jsx`).
-- **Multiplayer Battle Arena**: Real-time room-based competition powered by Socket.IO (`server/battleSocket.js` and `client/src/BattleApp.jsx`).
+- **Multiplayer Battle Arena**: Real-time room-based competition powered by Socket.IO (the battle logic in `server/index.js`, from the "Battle: live fastest-finger duels" section, and `client/src/BattleApp.jsx`).
 - **Testing & Tooling**: Includes contract tests for API routes, BKT unit test suites, modular component checks, and an ESLint 9 flat configuration with a baseline suppressions registry (`client/eslint-suppressions.json`).
 
 ---
@@ -102,14 +102,14 @@ Based on the architectural gaps identified in Section 4, I propose the following
 
 As part of my onboarding, I resolved three active technical debt issues in the Tenali repository:
 
-### 1. Issue #268: Cleaned Obsolete ESLint Suppressions in `src/monsters/fetchInterceptor.js`
+### 1. Issue #267: Cleaned Obsolete ESLint Suppressions in `src/monsters/fetchInterceptor.js`
 - **Problem**: Baseline `client/eslint-suppressions.json` recorded 8 suppressions (1 `no-empty`, 7 `no-unused-vars`) for `fetchInterceptor.js` that had already been resolved in source code, causing ESLint to fail on unpruned entries.
 - **Action**: Removed the obsolete `"src/monsters/fetchInterceptor.js"` suppression block from `client/eslint-suppressions.json`.
 - **Validation**:
   - Ran `npx eslint src/monsters/fetchInterceptor.js` — passed cleanly with 0 errors and 0 warnings (exit code 0).
   - Executed `node src/monsters/__tests__/fetchInterceptor.test.js` — all 37 unit and integration tests passed (18/18 URL detection, 15/15 extraction, 4/4 end-to-end).
 
-### 2. Issue #271: Resolved Obsolete ESLint Suppressions for `src/components/HintSystem/HintModal.jsx`
+### 2. Issue #268: Resolved Obsolete ESLint Suppressions for `src/components/HintSystem/HintModal.jsx`
 - **Problem**: Baseline recorded 6 suppressions (2 `no-empty`, 3 `no-unused-vars`, 1 `react-hooks/set-state-in-effect`). The 5 mechanical errors were already resolved in source, leaving stale suppressions that broke targeted linting.
 - **Action**: Cleaned the obsolete `no-empty` and `no-unused-vars` suppression entries in `client/eslint-suppressions.json` while maintaining the active suppression for `set-state-in-effect`.
 - **Validation**:
@@ -117,7 +117,7 @@ As part of my onboarding, I resolved three active technical debt issues in the T
   - Executed `node server/tests/test_hints_direct.js` — all 7 direct calculation tests passed.
   - Executed `node server/lib/bkt.test.js` — passed all assertions.
 
-### 3. Issue #274: Resolved Obsolete ESLint Suppressions for `src/monsters/MonsterDetail.jsx`
+### 3. Issue #271: Resolved Obsolete ESLint Suppressions for `src/monsters/MonsterDetail.jsx`
 - **Problem**: Baseline recorded 5 suppressions (4 `no-unused-vars`, 1 `react-hooks/set-state-in-effect`). The 4 unused variable errors (`getMonsterName`, `getMonsterTagline`, `load`, and unused helper methods) had already been eliminated in source, leaving phantom suppressions.
 - **Action**: Pruned the obsolete `no-unused-vars` entries from `client/eslint-suppressions.json` while retaining the valid active suppression for `react-hooks/set-state-in-effect`.
 - **Validation**:
