@@ -5,7 +5,11 @@
  * Java, PHP, Go, Rust, and R. Each language has compile + run commands defined
  * in LANGUAGE_SPECS.
  *
- * Security: timeout enforcement, output size limits, temp dir auto-cleanup.
+ * Security: submitted code must NEVER run directly on the host. `executeCode`
+ * refuses to run anything unless `isSandboxed()` is true, and it is false until
+ * a real isolation runner (a container or microVM with no network, no host
+ * filesystem, a non-root user and hard CPU/memory/pid limits) exists. Timeouts
+ * and output limits alone are not isolation.
  */
 
 const { spawn } = require('child_process');
@@ -198,8 +202,39 @@ class ToolUnavailableError extends Error {
   constructor(message) { super(message); this.name = 'ToolUnavailableError'; }
 }
 
+// The one switch for running submitted code. Deliberately a function that returns
+// false rather than an environment flag: turning it on has to come with a runner
+// that actually isolates the code, not just a different setting.
+function isSandboxed() {
+  return false;
+}
+
+const MAX_CODE_CHARS = 20000;
+const MAX_STDIN_CHARS = 10000;
+
 async function executeCode(language, code, stdin = '', timeout = TIME_LIMIT) {
   const lang = normalizeLanguage(language);
+
+  if (!isSandboxed()) {
+    return {
+      status: 'DISABLED',
+      language: lang,
+      stdout: '',
+      stderr: 'The code playground is switched off until it can run code in an isolated sandbox.',
+      exit_code: 1,
+      execution_time_ms: 0,
+      message: 'The code playground is switched off until it can run code in an isolated sandbox.',
+    };
+  }
+  // Whatever the caller asked for, the run is bounded here.
+  timeout = Math.min(Math.max(Number(timeout) || TIME_LIMIT, 100), TIME_LIMIT);
+  if (typeof code !== 'string' || code.length > MAX_CODE_CHARS || typeof stdin !== 'string' || stdin.length > MAX_STDIN_CHARS) {
+    return {
+      status: 'RUNTIME_ERROR', language: lang, stdout: '', stderr: 'Code or input is too large.',
+      exit_code: 1, execution_time_ms: 0, message: 'Code or input is too large.',
+    };
+  }
+
   const spec = LANGUAGE_SPECS[lang];
 
   if (!spec) {
@@ -331,6 +366,7 @@ async function executeCode(language, code, stdin = '', timeout = TIME_LIMIT) {
 
 module.exports = {
   executeCode,
+  isSandboxed,
   listLanguages,
   normalizeLanguage,
   LANGUAGE_SPECS,

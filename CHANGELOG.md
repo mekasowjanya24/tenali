@@ -19,9 +19,29 @@
 ---
 
 <!-- live-changelog:start -->
-### 📊 Total: 1133 commits · 84 active days · 46 unique authors
+### 📊 Total: 1139 commits · 86 active days · 46 unique authors
 
 > **📖 How to read this:** Each entry shows a clickable SHA, the author, and a one-line subject. Sub-bullets show the **exact files touched** with per-file `+additions −deletions`, the **total line stats**, and (when present) the **commit body** explaining what & why.
+
+#### 📅 2026-10-09  <sub>(1 commit)</sub>
+
+- 📌 [`42224f48`](https://github.com/vicharanashala/tenali/commit/42224f48c4acb21f93139b729ec364afe77bf152) — **jgupta05072003-code** — Delete VERSION.md
+    - 📁 **1 file:** `VERSION.md` `+0 −374`
+    - 📊 **`+0 −374`** · 1 file
+
+#### 📅 2026-10-07  <sub>(5 commits)</sub>
+
+- 📌 [`f5f358c9`](https://github.com/vicharanashala/tenali/commit/f5f358c99d8745a07b51facc1c96bc47c010b568) — **Krishna Gelra** — 🔀 PR [#389](https://github.com/vicharanashala/tenali/pull/389) from `vicharanashala` — revert-384-fix/264-scribbleguess-eslint
+- 📌 [`dfa738e6`](https://github.com/vicharanashala/tenali/commit/dfa738e6c750ced249f5f0e74509f1252b0f5e72) — **Krishna Gelra** — Revert "fix(client): prune obsolete ScribbleGuessApp eslint suppressions (#264)"
+    - 📁 **2 files:** `client/eslint-suppressions.json` `+5 −0`, `client/src/ScribbleGuessApp.jsx` `+1 −1`
+    - 📊 **`+6 −1`** · 2 files
+- 📌 [`3bfa69d1`](https://github.com/vicharanashala/tenali/commit/3bfa69d1eb4525286a780cb70ea46295221d645a) — **Krishna Gelra** — 🔀 PR [#384](https://github.com/vicharanashala/tenali/pull/384) from `AnshulKanodia` — fix/264-scribbleguess-eslint
+- 🐛 [`6e48f938`](https://github.com/vicharanashala/tenali/commit/6e48f9388786e326753aed115074bdfa4fad6e53) — **AnshulKanodia** — prune obsolete ScribbleGuessApp eslint suppressions (#264)
+    - 📁 **1 file:** `client/eslint-suppressions.json` `+0 −5`
+    - 📊 **`+0 −5`** · 1 file
+- ♻️ [`b74e1ba5`](https://github.com/vicharanashala/tenali/commit/b74e1ba5008827e7f08a9467eb8ed5d20d697723) — **AnshulKanodia** — remove unused React import in ScribbleGuessApp
+    - 📁 **1 file:** `client/src/ScribbleGuessApp.jsx` `+1 −1`
+    - 📊 **`+1 −1`** · 1 file
 
 #### 📅 2026-09-23  <sub>(3 commits)</sub>
 

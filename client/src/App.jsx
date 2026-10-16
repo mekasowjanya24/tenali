@@ -40,6 +40,14 @@ import DailyWarmupCard from './components/DailyWarmupCard';
 window.React = React;
 console.log("React version:", React.version);
 import LinearAlgebraApp from './LinearAlgebraApp'
+import PathMap, {
+  PmQuestBanner,
+  PmSuggestIcon,
+  PmGoalModal,
+  PmHomeSection,
+  PmHamburgerItem
+} from './PathMap';
+import { pmTrackAnswer } from './pathMapHelpers';
 import { TILES, FEATURED_TILES, MATH_LAB_ENTRY, GEOCRAFT_ENTRY } from './features/tiles'
 import LandingPage from './components/LandingPage/LandingPage.jsx'
 import LandingNavbar from './components/LandingPage/LandingNavbar.jsx'
@@ -52,6 +60,7 @@ import LandingNavbar from './components/LandingPage/LandingNavbar.jsx'
 function useProgressSubmit(revealed, isCorrect, topic, questionId) {
   useEffect(() => {
     if (!revealed) return;
+    try { pmTrackAnswer(topic, 'medium', isCorrect); } catch {}
     const token = localStorage.getItem('tenali-auth-token');
     if (!token || !topic) return;
 
@@ -44920,6 +44929,7 @@ function App() {
     riddle: RiddleApp,              // Math Riddles
     'water-jug-lab': WaterJugLab,
     'equation-crafting-lab': EquationCraftingLab,
+    pathmap: PathMap, // Learning Path (prerequisite graph & personalized path)
   }
 
   // Get the component to render (or null if mode not set)
@@ -45635,6 +45645,9 @@ function App() {
         onOpenHall={() => setHallOpen(true)}
         onTap={() => setHallOpen(true)}
       />
+      {mode && mode !== 'pathmap' && (
+        <PmSuggestIcon moduleId={mode} onNavigate={(id) => setMode(id)} />
+      )}
       <HallPanel
         open={hallOpen}
         onClose={() => {
@@ -45690,6 +45703,7 @@ function Home({ onSelect, onBackToLanding, completedTopics = [], goldMastery = [
   const [showAbout, setShowAbout] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
   const [search, setSearch] = useState('')
+  const [pmOpen, setPmOpen] = useState(false)
   const featuredApps = FEATURED_TILES
   const mathLabEntry = MATH_LAB_ENTRY
   const geocraftEntry = GEOCRAFT_ENTRY
@@ -45804,6 +45818,7 @@ function Home({ onSelect, onBackToLanding, completedTopics = [], goldMastery = [
               onMouseLeave={e => e.target.style.background = 'none'}>
               <strong style={{ color: 'var(--clr-accent)' }}>ℹ️ About Tenali</strong>
             </button>
+            <PmHamburgerItem onOpen={() => { setMenuOpen(false); setPmOpen(true); }} />
             {/* Visual Learning Universe & GeoCraft pinned at top of hamburger menu */}
             {[mathLabEntry, geocraftEntry].map(app => (
               <button key={app.key} onClick={() => {
@@ -45949,6 +45964,7 @@ function Home({ onSelect, onBackToLanding, completedTopics = [], goldMastery = [
           </button>
         </div>
       )}
+      {!search && !isGoalSelection && <PmQuestBanner onSelect={onSelect} />}
       {!search && !isGoalSelection && (
         <DailyWarmupCard completedTopics={completedTopics} apiBase={API} onSelectTopic={onSelect} />
       )}
@@ -45962,6 +45978,7 @@ function Home({ onSelect, onBackToLanding, completedTopics = [], goldMastery = [
           onChange={e => setSearch(e.target.value)}
         />
       </div>
+      {!search && !isGoalSelection && <PmHomeSection onSelect={onSelect} onOpenGoalPicker={() => setPmOpen(true)} />}
       <div id="tour-home-grid" className="menu-grid" ref={gridRef}>
         {filteredRegular.map((app) => {
           const isGold = goldMastery && goldMastery.includes(app.key)
@@ -45979,6 +45996,7 @@ function Home({ onSelect, onBackToLanding, completedTopics = [], goldMastery = [
         })}
       </div>
       <div className="grid-dimension">{rows} × {cols}</div>
+      <PmGoalModal open={pmOpen} onClose={() => setPmOpen(false)} onSelect={onSelect} />
     </>
   )
 }
@@ -65460,15 +65478,15 @@ function CustomApp({ onBack, isGoalMode = false }) {
    */
   
   const handleTimeout = async () => {
-    if (typeof revealed !== 'undefined' && revealed) return
-    if (typeof finished !== 'undefined' && finished) return
-    if (typeof phase !== 'undefined' && phase === 'finished') return
-    try { if (typeof setIsCorrect !== 'undefined') setIsCorrect(false) } catch(_) {}
-    try { if (typeof setRevealed !== 'undefined') setRevealed(true) } catch(_) {}
-    try { if (typeof setFeedback !== 'undefined') setFeedback("⏰ Time's up!") } catch(_) {}
+    if (revealed) return
+    if (phase === 'finished') return
+    try { setIsCorrect(false) } catch(_) {}
+    try { setRevealed(true) } catch(_) {}
+    try { setFeedback("⏰ Time's up!") } catch(_) {}
     const timeTaken = timer.stop ? timer.stop() : 0
     const qPrompt = question ? (question.prompt || question.question || (question.n1 !== undefined ? `${question.n1} ${question.op || '+'} ${question.n2}` : 'Question')) : 'Question'
     try {
+      const apiPath = getApiPathForType(curType || 'basicarith')
       const r = await fetch(`${API}/${apiPath}/check`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': authGetToken() ? `Bearer ${authGetToken()}` : '' },
@@ -65480,7 +65498,7 @@ function CustomApp({ onBack, isGoalMode = false }) {
         setResults(prev => [...prev, { prompt: qPrompt, question: qPrompt, userAnswer: '(timeout)', correctAnswer: corrAns, correct: false, time: timeTaken }])
       }
       if (sessionGoal === 'perfect') {
-        try { if (typeof setFinished === 'function') setFinished(true); if (typeof setPhase === 'function') setPhase('finished'); timer.reset() } catch(_) {}
+        try { setPhase('finished'); timer.reset() } catch(_) {}
       }
     } catch(e) {
       console.error('handleTimeout error:', e)
@@ -68651,39 +68669,8 @@ function RiyaApp({ onBack, isGoalMode = false }) {
   }, [phase, revealed, selected, optionOrder, quizIdx, unitIdx, perQuestion, activeIndices])
 
   // ── Helpers ─────────────────────────────────────────────────────
-  
-  const handleTimeout = async () => {
-    if (typeof revealed !== 'undefined' && revealed) return
-    if (typeof finished !== 'undefined' && finished) return
-    if (typeof phase !== 'undefined' && phase === 'finished') return
-    try { if (typeof setIsCorrect !== 'undefined') setIsCorrect(false) } catch(_) {}
-    try { if (typeof setRevealed !== 'undefined') setRevealed(true) } catch(_) {}
-    try { if (typeof setFeedback !== 'undefined') setFeedback("⏰ Time's up!") } catch(_) {}
-    const timeTaken = timer.stop ? timer.stop() : 0
-    const qPrompt = question ? (question.prompt || question.question || (question.n1 !== undefined ? `${question.n1} ${question.op || '+'} ${question.n2}` : 'Question')) : 'Question'
-    try {
-      const r = await fetch(`${API}/riya-api/check`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': authGetToken() ? `Bearer ${authGetToken()}` : '' },
-        body: JSON.stringify({ ...(typeof question !== 'undefined' ? question : {}), userAnswer: '', answer: '', sessionGoal })
-      })
-      const d = await r.json()
-      const corrAns = d.display || d.correctAnswer || d.answer || '—'
-      if (typeof setResults === 'function') {
-        setResults(prev => [...prev, { prompt: qPrompt, question: qPrompt, userAnswer: '(timeout)', correctAnswer: corrAns, correct: false, time: timeTaken }])
-      }
-      if (sessionGoal === 'perfect') {
-        try { if (typeof setFinished === 'function') setFinished(true); if (typeof setPhase === 'function') setPhase('finished'); timer.reset() } catch(_) {}
-      }
-    } catch(e) {
-      console.error('handleTimeout error:', e)
-      if (typeof setResults === 'function') {
-        setResults(prev => [...prev, { prompt: qPrompt, question: qPrompt, userAnswer: '(timeout)', correctAnswer: '—', correct: false, time: timeTaken }])
-      }
-    }
-  }
 
-const startQuiz = () => {
+  const startQuiz = () => {
     setPhase('quiz')
     setQuizIdx(0)
     setPerQuestion([])
@@ -68997,7 +68984,7 @@ const startQuiz = () => {
  *     y = mx + C for each. If either y is out of the plot window [-7, 7],
  *     retry. This guarantees a tidy integer answer and visible points.
  */
-function TatsavitLineApp({ onBack }) {
+function TatsavitLineApp({ onBack, isGoalMode = false }) {
   // `round` is just a counter that forces regeneration on Next
   const [round, setRound] = useState(0)
   // Point coordinates are stored as strings so the inputs stay editable

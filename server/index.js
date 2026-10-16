@@ -1477,17 +1477,36 @@ const compiler = require('./compiler');
 app.get('/api/playground2/languages', (req, res) => {
   try {
     const langs = compiler.listLanguages();
-    res.json({ languages: langs });
+    res.json({ enabled: compiler.isSandboxed(), languages: langs });
   } catch (e) {
     logger.error(null,'[playground2] list error:', e.message);
     res.status(500).json({ error: 'Failed to list languages' });
   }
 });
 
-app.post('/api/playground2/run', async (req, res) => {
+// Running submitted code is the most dangerous thing this server does, so the
+// route is closed three ways: it needs a signed-in user, it is rate limited per
+// IP, and it refuses outright while no isolated sandbox exists (503). The last is
+// what actually protects the host; the first two limit who could use it once a
+// sandbox is in place.
+const playground2Limiter = rateLimit({
+  windowMs: 60 * 1000,
+  limit: 20,
+  standardHeaders: 'draft-7',
+  legacyHeaders: false,
+  message: { error: 'Too many runs. Please wait a minute.' },
+});
+
+app.post('/api/playground2/run', auth.requireAuth, playground2Limiter, async (req, res) => {
   try {
-    const { language, code, stdin, timeout } = req.body;
-    if (!language || !code) {
+    if (!compiler.isSandboxed()) {
+      return res.status(503).json({
+        status: 'DISABLED',
+        error: 'The code playground is switched off until it can run code in an isolated sandbox.',
+      });
+    }
+    const { language, code, stdin, timeout } = req.body || {};
+    if (typeof language !== 'string' || typeof code !== 'string' || !language || !code) {
       return res.status(400).json({ error: 'language and code required' });
     }
     const result = await compiler.executeCode(language, code, stdin || '', timeout);
@@ -1518,7 +1537,12 @@ app.get('/enhanced', (_req, res) => {
   res.sendFile(path.join(__dirname, '..', 'enhanced', 'index.html'));
 });
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// serves the shared node/edge data used by PathMap
+app.get(['/graph-data.json', '/graph/graph-data.json'], (_req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'graph', 'graph-data.json'));
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
 // LEARNING TRANSFER CHALLENGES & PROGRESS SYNC API
 // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 

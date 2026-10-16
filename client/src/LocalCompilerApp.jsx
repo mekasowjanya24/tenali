@@ -191,6 +191,10 @@ export default function LocalCompilerApp({ onBack }) {
       })
       if (!res.ok) {
         const text = await res.text()
+        let message = ''
+        try { message = JSON.parse(text).error || '' } catch { /* not JSON */ }
+        if (res.status === 401) throw new Error('Please log in to run code.')
+        if (message && (res.status === 503 || res.status === 429)) throw new Error(message)
         throw new Error(`Server error ${res.status}: ${text.slice(0, 200)}`)
       }
       const data = await res.json()
