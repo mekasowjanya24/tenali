@@ -52,6 +52,7 @@ const path = require('path');
 const http = require('http');
 const wordCreator = require('./wordCreator');
 const logger = require('./lib/logger');
+const { getStreakMilestoneBonus } = require('./lib/streak');
 const { generateExplanation } = require('./explanations');
 
 // Catch what would otherwise be a silent crash (or, for unhandled promise
@@ -688,34 +689,18 @@ function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
 
 
 /**
- * Reads JSON files in `dir` concurrently in bounded batches to avoid EMFILE
- * file-descriptor exhaustion when scanning directories with thousands of files.
+ * Reads all JSON files in `dir` concurrently (fs.promises.readFile lets libuv's
+ * thread pool overlap the I/O instead of doing sequential blocking syscalls)
+ * and parses each one.
  * @param {string} dir - Directory containing JSON files
- * @param {number} batchSize - Batch size for concurrent reads
  * @returns {Promise<Array<object>>} Array of parsed objects
  */
-async function loadJsonDir(dir, batchSize = 100) {
-  if (!fs.existsSync(dir)) return [];
+async function loadJsonDir(dir) {
   const files = fs.readdirSync(dir).filter((file) => file.endsWith('.json'));
-  const results = [];
-  for (let i = 0; i < files.length; i += batchSize) {
-    const chunk = files.slice(i, i + batchSize);
-    const chunkContents = await Promise.all(
-      chunk.map(async (file) => {
-        try {
-          const raw = await fs.promises.readFile(path.join(dir, file), 'utf8');
-          return JSON.parse(raw);
-        } catch (err) {
-          logger.error('loadJsonDir', `Failed to read/parse ${file} in ${dir}:`, err.message);
-          return null;
-        }
-      })
-    );
-    for (const item of chunkContents) {
-      if (item) results.push(item);
-    }
-  }
-  return results;
+  const contents = await Promise.all(
+    files.map((file) => fs.promises.readFile(path.join(dir, file), 'utf8'))
+  );
+  return contents.map((raw) => JSON.parse(raw));
 }
 
 // Directory containing conceptual questions
@@ -1113,13 +1098,8 @@ const conceptDir = path.join(__dirname, '..', 'concept', 'questions');
 // time. Concepts is tiny (~15 files); left synchronous, not worth the churn.
 async function loadVocabAsync() {
   try {
-    const list = await loadJsonDir(vocabDir);
-    // Assign unique integer IDs (1..N) so duplicate IDs across files do not collide
-    const uniqueList = list.map((q, idx) => ({ ...q, id: idx + 1 }));
-    console.log(`[vocab] Loaded ${uniqueList.length} vocabulary questions from ${vocabDir}`);
-    return uniqueList;
+    return await loadJsonDir(vocabDir);
   } catch (e) {
-    logger.error('vocab', 'Failed to load vocabulary questions:', e);
     return [];
   }
 }
@@ -1918,11 +1898,7 @@ app.post('/api/progress', express.json(), async (req, res) => {
     const streakMilestones = [3, 7, 15, 30];
     streakMilestones.forEach(days => {
       if (oldStreak < days && (user.streak || 0) >= days) {
-        let bonusCoins = 0;
-        if (days === 3) bonusCoins = 50;
-        else if (days === 7) bonusCoins = 150;
-        else if (days === 15) bonusCoins = 300;
-        else if (days === 30) bonusCoins = 500;
+        const bonusCoins = getStreakMilestoneBonus(days);
         
         if (bonusCoins > 0) {
           user.coins = (user.coins || 0) + bonusCoins;

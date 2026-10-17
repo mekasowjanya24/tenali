@@ -42640,7 +42640,7 @@ function App() {
       if (e?.detail?.streak !== undefined) {
         setStreak(e.detail.streak);
       } else {
-        try { setStreak(parseInt(localStorage.getItem('tenali-streak') || '0', 10)); } catch {}
+        try { setStreak(parseInt(localStorage.getItem('tenali-streak') || '0', 10)); } catch (err) { console.warn('[streak] could not read tenali-streak', err); }
       }
     };
     window.addEventListener('tenali-streak-change', handleStreak);
@@ -48182,7 +48182,7 @@ function GKApp({ onBack, markTopicCompleted, isGoalMode = false }) {
       const res = await fetch(`${API}/gk-api/check`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': authGetToken() ? `Bearer ${authGetToken()}` : '' }, body: JSON.stringify({  id: question.id, answerOption: option, sessionGoal }) })
       const data = await res.json()
       setIsCorrect(data.correct)
-      if (data.correct) setScore((s) => s + 1)
+      if (data.correct) setScore((s) => s + 1);
       // Show feedback with explanation
       (() => {
           const _ci = data.lil?.coinsEarned > 0 ? ` (+${data.lil.coinsEarned} coins!)` : ''
@@ -62780,7 +62780,7 @@ const fetchQuestion = async (step) => {
       setIsCorrect(data.correct)
       if (data.correct) setScore((s) => s + 1)
       // Show floor and ceiling values for reference
-      const reasoning = `√${question.q} = ${data.sqrtRounded}\n⌊${data.sqrtRounded}⌋ = ${data.floorAnswer}, ⌈${data.sqrtRounded}⌉ = ${data.ceilAnswer}`
+      const reasoning = `√${question.q} = ${data.sqrtRounded}\n⌊${data.sqrtRounded}⌋ = ${data.floorAnswer}, ⌈${data.sqrtRounded}⌉ = ${data.ceilAnswer}`;
       (() => {
         const _ci = data.lil?.coinsEarned > 0 ? ` (+${data.lil.coinsEarned} coins!)` : ''
         if (data.correct) {
@@ -63429,7 +63429,7 @@ const loadQuestion = async () => {
     // Increment score if correct
     if (data.correct) setScore(s => s + 1)
     // Format feedback message using correct factors (p, q, r, s from question.factors)
-    const { p, q, r, s } = question.factors
+    const { p, q, r, s } = question.factors;
     (() => {
         const _ci = data.lil?.coinsEarned > 0 ? ` (+${data.lil.coinsEarned} coins!)` : ''
         if (data.correct) {
@@ -64104,7 +64104,7 @@ const loadQuestion = async () => {
     let correctStr = ''
     if (data.roots.type === 'real_distinct') correctStr = `Roots: ${data.roots.r1} and ${data.roots.r2}`
     else if (data.roots.type === 'real_equal') correctStr = `Root: ${data.roots.r1} (repeated)`
-    else correctStr = `Roots: ${data.roots.realPart} ± ${data.roots.imagPart}i`
+    else correctStr = `Roots: ${data.roots.realPart} ± ${data.roots.imagPart}i`;
     (() => {
         const _ci = data.lil?.coinsEarned > 0 ? ` (+${data.lil.coinsEarned} coins!)` : ''
         if (data.correct) {
@@ -64765,7 +64765,7 @@ const loadQuestion = async () => {
     setIsCorrect(data.correct)
     if (data.correct) setScore(s => s + 1)
     // Format variable string for feedback (e.g., "x=2, y=3")
-    const varStr = Object.entries(question.vars).map(([k, v]) => `${k}=${v}`).join(', ')
+    const varStr = Object.entries(question.vars).map(([k, v]) => `${k}=${v}`).join(', ');
     (() => {
         const _ci = data.lil?.coinsEarned > 0 ? ` (+${data.lil.coinsEarned} coins!)` : ''
         if (data.correct) {
@@ -65066,7 +65066,7 @@ const loadQuestion = async () => {
     const res = await fetch(`${API}/lineq-api/check`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': authGetToken() ? `Bearer ${authGetToken()}` : '' }, body: JSON.stringify({  x1: question.x1, y1: question.y1, x2: question.x2, y2: question.y2, userM: Number(userM), userC: Number(userC), sessionGoal }) })
     const data = await res.json()
     setIsCorrect(data.correct)
-    if (data.correct) setScore(s => s + 1)
+    if (data.correct) setScore(s => s + 1);
     // Format feedback message with correct m and c values
     (() => {
         const _ci = data.lil?.coinsEarned > 0 ? ` (+${data.lil.coinsEarned} coins!)` : ''
