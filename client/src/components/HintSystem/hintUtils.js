@@ -33,12 +33,16 @@ export function recordDailyStreak() {
     } else if (lastActive !== todayStr) {
       const lastDate = new Date(lastActive);
       const todayDate = new Date(todayStr);
-      const diffTime = Math.abs(todayDate - lastDate);
+      const diffTime = todayDate - lastDate;
       const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
       if (diffDays === 1) {
         currentStreak = (currentStreak || 0) + 1;
       } else if (diffDays > 1) {
         currentStreak = 1;
+      } else if (diffDays < 0) {
+        // Negative date difference (e.g. system clock skew / backwards date):
+        // safely preserve the current streak without resetting or advancing
+        return currentStreak;
       }
     }
 

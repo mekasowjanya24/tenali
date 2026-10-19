@@ -42603,7 +42603,7 @@ function App() {
   const [totalSolved, setTotalSolved] = useState(() => {
     try { return parseInt(localStorage.getItem('tenali-total-solved') || '0', 10) } catch { return 0 }
   })
-  const [streak, setStreak] = useState(() => {
+  const [, setStreak] = useState(() => {
     try { return parseInt(localStorage.getItem('tenali-streak') || '0', 10) } catch { return 0 }
   })
   const [celebrationQueue, setCelebrationQueue] = useState([])
