@@ -40,6 +40,14 @@ import DailyWarmupCard from './components/DailyWarmupCard';
 window.React = React;
 console.log("React version:", React.version);
 import LinearAlgebraApp from './LinearAlgebraApp'
+import PathMap, {
+  PmQuestBanner,
+  PmSuggestIcon,
+  PmGoalModal,
+  PmHomeSection,
+  PmHamburgerItem
+} from './PathMap';
+import { pmTrackAnswer } from './pathMapHelpers';
 import { TILES, FEATURED_TILES, MATH_LAB_ENTRY, GEOCRAFT_ENTRY } from './features/tiles'
 import LandingPage from './components/LandingPage/LandingPage.jsx'
 import LandingNavbar from './components/LandingPage/LandingNavbar.jsx'
@@ -49,9 +57,10 @@ import LandingNavbar from './components/LandingPage/LandingNavbar.jsx'
  * useProgressSubmit Hook
  * Submits the result of a quiz question to the backend to track mastery and ensure unique questions.
  */
-function useProgressSubmit(revealed, isCorrect, topic, questionId) {
+export function useProgressSubmit(revealed, isCorrect, topic, questionId) {
   useEffect(() => {
     if (!revealed) return;
+    try { pmTrackAnswer(topic, 'medium', isCorrect); } catch {}
     const token = localStorage.getItem('tenali-auth-token');
     if (!token || !topic) return;
 
@@ -101,6 +110,7 @@ import VisualMathLabRedux, {
 import CoordinateGrid from './components/CoordinateGrid';
 import LanguageDashboard from './language/LanguageDashboard'
 import ContrastChallengeApp, { QuizLayoutExtension } from './ContrastChallengeApp'
+import CoordGeomInteractiveApp from './apps/CoordGeomInteractiveApp.jsx'
 import { VOCAB_CORPUS } from './vocabCorpus'
 import PercentExplanationApp from './PercentExplanationApp'
 import { playSound } from './audioContext'
@@ -1104,7 +1114,7 @@ const enhanceFinishedScreen = (node, sessionGoal) => {
  * structured card with highlighted answer and formatted explanation.
  * For normal correct/wrong feedback, renders inline text.
  */
-function renderFeedback(feedback, isCorrect) {
+export function renderFeedback(feedback, isCorrect) {
   if (!feedback) return null
   const isSolve = isCorrect === false && feedback.startsWith('Solution:')
   if (!isSolve) {
@@ -41638,261 +41648,6 @@ function DragDropCountingApp({ onBack }) {
   )
 }
 
-function CoordGeomInteractiveApp({ onBack }) {
-  const [started, setStarted] = useState(false);
-  const [finished, setFinished] = useState(false);
-  const [round, setRound] = useState(0);
-  const [numQuestions, setNumQuestions] = useState('10');
-  const [difficulty, setDifficulty] = useState('easy');
-  const [score, setScore] = useState(0);
-
-  const [currentQ, setCurrentQ] = useState(null);
-  const [dartPos, setDartPos] = useState(null); // {x, y}
-  const [textAnswer, setTextAnswer] = useState(''); // for distance, gradient, etc.
-  const [revealed, setRevealed] = useState(false);
-  const [isCorrect, setIsCorrect] = useState(null);
-  const [feedback, setFeedback] = useState('');
-  const [results, setResults] = useState([]);
-
-  useProgressSubmit(revealed, isCorrect, 'coordgeom', currentQ?.id);
-  const timer = useTimer();
-
-  const loadQuestion = async () => {
-    try {
-      const r = await fetch(`${API}/coordgeom-api/question?difficulty=${difficulty}`);
-      if (!r.ok) throw new Error('Server error');
-      const data = await r.json();
-      setCurrentQ(data);
-      setDartPos(null);
-      setTextAnswer('');
-      setRevealed(false);
-      setIsCorrect(null);
-      setFeedback('');
-      timer.start();
-    } catch (e) {
-      console.error(e);
-      setFeedback('Error loading question. ' + e.message);
-    }
-  };
-
-  const startGame = () => {
-    const qCount = parseInt(numQuestions) || 10;
-    setNumQuestions(String(qCount));
-    setStarted(true);
-    setFinished(false);
-    setRound(1);
-    setScore(0);
-    setResults([]);
-    loadQuestion();
-  };
-
-  // CoordinateGrid handles clicks internally
-
-  const handleCheck = async () => {
-    if (revealed) return;
-    if (currentQ?.type === 'coord' && !dartPos) return;
-    if (currentQ?.type !== 'coord' && !textAnswer.trim()) return;
-
-    const timeTaken = timer.stop();
-    setRevealed(true);
-
-    try {
-      const payload = {
-        ...currentQ,
-        userAnswer: currentQ.type === 'coord' ? `(${dartPos.x}, ${dartPos.y})` : textAnswer
-      };
-      const r = await fetch(`${API}/coordgeom-api/check`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-      const data = await r.json();
-
-      const correct = data.correct;
-      setIsCorrect(correct);
-      setFeedback(data.message + (correct ? ` ${data.display} is correct!` : ` The answer was ${data.display}.`));
-      if (correct) setScore(s => s + 1);
-
-      setResults(prev => [...prev, {
-        question: currentQ.prompt,
-        userAnswer: payload.userAnswer,
-        correctAnswer: data.display,
-        correct,
-        time: timeTaken
-      }]);
-    } catch (e) {
-      console.error(e);
-      setFeedback('Error checking answer.');
-    }
-  };
-
-  const handleSolve = () => {
-    if (revealed || !currentQ) return;
-    timer.stop();
-    setRevealed(true);
-    setIsCorrect(false);
-    setFeedback(`Solution: The answer is ${currentQ.display}.`);
-    setResults(prev => [...prev, {
-      question: currentQ.prompt,
-      userAnswer: '—',
-      correctAnswer: currentQ.display,
-      correct: false,
-      time: 0
-    }]);
-  };
-
-  const nextQuestion = () => {
-    if (round >= Number(numQuestions)) {
-      setFinished(true);
-    } else {
-      setRound(r => r + 1);
-      loadQuestion();
-    }
-  };
-
-  if (!started) {
-    const diffLabels = { easy: 'Easy — Foundations', medium: 'Medium — Lengths', hard: 'Hard — Slopes & Eqs', extrahard: 'Extra Hard — Advanced' };
-    return (
-      <div style={{ minHeight: '100vh', background: '#181512', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px', fontFamily: 'Inter, sans-serif' }}>
-        <div style={{
-          background: '#2D2520', border: '1.5px solid #4A4038', borderRadius: '28px',
-          boxShadow: '0 20px 40px rgba(0,0,0,.45)', padding: '48px 40px', maxWidth: '720px', width: '100%',
-          textAlign: 'center', position: 'relative'
-        }}>
-          <button onClick={onBack} style={{
-            position: 'absolute', top: '24px', left: '24px', background: 'transparent',
-            border: '1px solid #5B5048', borderRadius: '6px', padding: '6px 14px',
-            color: '#A89C93', fontFamily: 'Inter, sans-serif', fontWeight: 600, fontSize: '0.85rem', cursor: 'pointer'
-          }}>← Home</button>
-
-          <h1 style={{ fontFamily: 'Georgia, "Times New Roman", serif', fontWeight: 700, fontSize: '48px', color: '#F4F1ED', margin: '0 0 12px', lineHeight: 1.1 }}>
-            Coordinate Geometry
-          </h1>
-          <p style={{ color: '#988D84', fontSize: '0.9rem', margin: '0 0 40px', fontFamily: 'Inter, sans-serif', fontWeight: 400 }}>
-            Choose a level and solve coordinate geometry challenges
-          </p>
-          <p style={{ color: '#988D84', fontSize: '0.9rem', margin: '0 0 24px', fontFamily: 'Inter, sans-serif', fontWeight: 400 }}>
-            Practice coordinate geometry!
-          </p>
-
-          <div style={{ marginBottom: '24px' }}>
-            <h3 style={{ color: '#F4F1ED', fontSize: '0.9rem', margin: '0 0 16px', fontFamily: 'Inter, sans-serif', fontWeight: 700 }}>
-              Select Difficulty:
-            </h3>
-            <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap', marginBottom: '12px' }}>
-              {['easy', 'medium', 'hard', 'extrahard'].map(d => (
-                <button key={d} onClick={() => setDifficulty(d)} style={{
-                  background: difficulty === d ? '#F08C46' : 'transparent',
-                  border: difficulty === d ? '1px solid #F08C46' : '1px solid #5B5048',
-                  borderRadius: '50px', padding: '8px 16px',
-                  color: difficulty === d ? '#FFF' : '#988D84', fontFamily: 'Inter, sans-serif', fontWeight: 600, fontSize: '0.85rem', cursor: 'pointer'
-                }}>
-                  {diffLabels[d]}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div style={{ marginBottom: '32px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-            <label style={{ color: '#988D84', fontSize: '0.85rem', margin: '0 0 12px', fontFamily: 'Inter, sans-serif', fontWeight: 400 }}>
-              How many questions?
-            </label>
-            <input type="text" value={numQuestions} onChange={(e) => { const v = e.target.value; if (v === '' || /^\d+$/.test(v)) setNumQuestions(v) }} style={{
-              background: '#463B34', border: '1px solid #5B5048', borderRadius: '6px',
-              padding: '10px', color: '#FFF', fontFamily: 'Inter, sans-serif', fontWeight: 600, fontSize: '0.9rem',
-              width: '100px', textAlign: 'center', outline: 'none'
-            }} placeholder="10" />
-          </div>
-
-          <button onClick={startGame} style={{
-            background: '#F08C46', border: 'none', borderRadius: '6px',
-            padding: '10px 24px', color: '#FFF', fontFamily: 'Inter, sans-serif', fontWeight: 600, fontSize: '0.9rem', cursor: 'pointer'
-          }}>
-            Start Quiz
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  if (finished) {
-    return (
-      <QuizLayout title="Coordinate Geometry" onBack={onBack}>
-        <ResultsView score={score} total={Number(numQuestions)} results={results} onRetry={startGame} />
-      </QuizLayout>
-    );
-  }
-
-  return (
-    <QuizLayout title="Coordinate Geometry" onBack={onBack}>
-      <div style={{ textAlign: 'center' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8, padding: '0 4px' }}>
-          <span style={{ color: 'var(--clr-muted)', fontSize: '0.85rem' }}>Round {round} / {numQuestions}</span>
-          <span style={{ fontWeight: 700, color: 'var(--clr-accent)' }}>Score: {score}</span>
-        </div>
-
-        <h3 className="prompt-text">{currentQ?.prompt}</h3>
-
-        <div style={{ margin: '20px auto', display: 'flex', justifyContent: 'center' }}>
-          <CoordinateGrid
-            points={currentQ?.points || []}
-            onClick={currentQ?.type === 'coord' && !revealed ? (pos) => setDartPos(pos) : undefined}
-            cursorType={currentQ?.type === 'coord' ? 'crosshair' : 'default'}
-            userTarget={dartPos}
-            revealedTarget={revealed && !isCorrect && currentQ?.type === 'coord' ? { x: currentQ.ansX, y: currentQ.ansY } : null}
-            connectPoints={true}
-            width={350}
-            height={350}
-          />
-        </div>
-
-        {currentQ?.type === 'coord' ? (
-          dartPos && !revealed && (
-            <p style={{ color: 'var(--clr-muted)', fontSize: '0.85rem', margin: '8px 0 0' }}>
-              Selected Point: ({dartPos.x}, {dartPos.y})
-            </p>
-          )
-        ) : (
-          <div style={{ marginTop: 20 }}>
-            <input
-              type="text"
-              className="answer-input"
-              placeholder={currentQ?.type === 'equation' ? 'e.g. y=-3/4x+2' : currentQ?.type === 'fraction' ? 'e.g. -3/4' : 'e.g. 13'}
-              value={textAnswer}
-              onChange={e => !revealed && setTextAnswer(e.target.value)}
-              onKeyDown={e => { if (e.key === 'Enter') handleCheck(); }}
-              disabled={revealed}
-            />
-          </div>
-        )}
-
-        <div className="button-row" style={{ marginTop: 20, justifyContent: 'center', gap: '10px' }}>
-          {!revealed ? (
-            <>
-              <button className="btn" onClick={handleCheck} disabled={currentQ?.type === 'coord' ? !dartPos : !textAnswer.trim()}>
-                Check Answer
-              </button>
-              <button className="btn" onClick={handleSolve} style={{ background: 'transparent', border: '1px solid var(--clr-border)', color: 'var(--clr-muted)' }}>
-                💡 Solve
-              </button>
-            </>
-          ) : (
-            <button className="btn" onClick={nextQuestion}>
-              Next Question
-            </button>
-          )}
-        </div>
-
-        {revealed && (
-          <div style={{ marginTop: 20 }}>
-            {renderFeedback(feedback, isCorrect)}
-          </div>
-        )}
-      </div>
-    </QuizLayout>
-  );
-}
-
 function DartBoardApp({ onBack }) {
   const [started, setStarted] = useState(false);
   const [finished, setFinished] = useState(false);
@@ -42572,7 +42327,7 @@ function App() {
       const currentParamView = params.get('view');
       if (mode) {
         if (currentMode !== mode) {
-          window.history.replaceState({}, '', `${BASE}/?mode=${mode}`);
+          window.history.pushState({ mode }, '', `${BASE}/?mode=${mode}`);
         }
       } else {
         if (currentView === 'puzzles') {
@@ -42589,6 +42344,30 @@ function App() {
       console.error('Failed to sync URL mode:', e);
     }
   }, [mode, currentView]);
+
+  // Listen for browser Back/Forward navigation (popstate) to restore mode and view
+  useEffect(() => {
+    const handlePopState = () => {
+      try {
+        const params = new URLSearchParams(window.location.search);
+        const urlMode = params.get('mode') || null;
+        const urlView = params.get('view') || (urlMode ? 'puzzles' : 'landing');
+        setMode(urlMode);
+        setCurrentView(urlView === 'puzzles' ? 'puzzles' : 'landing');
+        if (urlMode === 'angles') {
+          setLearningPhase('select');
+        } else {
+          setLearningPhase(null);
+        }
+        setIsGoalMode(urlMode === 'goalpractice');
+      } catch (e) {
+        console.error('Failed to handle popstate:', e);
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
 
   const { user } = useAuth()
   const [completedTopics, setCompletedTopics] = useState(() => {
@@ -44667,7 +44446,14 @@ function App() {
                   {/* Image Types */}
                   {(question.type === 'image-numpad' || question.type === 'image-option') && question.image && (
                     <div style={{ textAlign: 'center', margin: '0 auto 16px' }}>
-                      <img src={question.image} alt="Riddle" style={{ maxWidth: '100%', maxHeight: 280, width: 'auto', height: 'auto', objectFit: 'contain', borderRadius: 'var(--radius)', border: '1px solid var(--clr-border)', background: 'var(--clr-input)' }} />
+                      <img
+                        src={withBase(question.image.startsWith('/') ? question.image : `/${question.image}`)}
+                        alt={question.title || 'Visual Riddle'}
+                        onError={(e) => {
+                          console.warn(`[Math Riddles] Failed to load riddle image: ${e.target.src}`);
+                        }}
+                        style={{ maxWidth: '100%', maxHeight: 280, width: 'auto', height: 'auto', objectFit: 'contain', borderRadius: 'var(--radius)', border: '1px solid var(--clr-border)', background: 'var(--clr-input)' }}
+                      />
                     </div>
                   )}
 
@@ -44712,7 +44498,11 @@ function App() {
                           }}
                         >
                           {question.optionImages && question.optionImages[i] ? (
-                            <img src={question.optionImages[i]} alt={opt} style={{ width: '100%', height: '100%', objectFit: 'contain', padding: '4px' }} />
+                            <img
+                              src={withBase(question.optionImages[i].startsWith('/') ? question.optionImages[i] : `/${question.optionImages[i]}`)}
+                              alt={opt}
+                              style={{ width: '100%', height: '100%', objectFit: 'contain', padding: '4px' }}
+                            />
                           ) : opt}
                         </button>
                       ))}
@@ -44925,6 +44715,7 @@ function App() {
     riddle: RiddleApp,              // Math Riddles
     'water-jug-lab': WaterJugLab,
     'equation-crafting-lab': EquationCraftingLab,
+    pathmap: PathMap, // Learning Path (prerequisite graph & personalized path)
   }
 
   // Get the component to render (or null if mode not set)
@@ -45640,6 +45431,9 @@ function App() {
         onOpenHall={() => setHallOpen(true)}
         onTap={() => setHallOpen(true)}
       />
+      {mode && mode !== 'pathmap' && (
+        <PmSuggestIcon moduleId={mode} onNavigate={(id) => setMode(id)} />
+      )}
       <HallPanel
         open={hallOpen}
         onClose={() => {
@@ -45695,6 +45489,7 @@ function Home({ onSelect, onBackToLanding, completedTopics = [], goldMastery = [
   const [showAbout, setShowAbout] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
   const [search, setSearch] = useState('')
+  const [pmOpen, setPmOpen] = useState(false)
   const featuredApps = FEATURED_TILES
   const mathLabEntry = MATH_LAB_ENTRY
   const geocraftEntry = GEOCRAFT_ENTRY
@@ -45809,6 +45604,7 @@ function Home({ onSelect, onBackToLanding, completedTopics = [], goldMastery = [
               onMouseLeave={e => e.target.style.background = 'none'}>
               <strong style={{ color: 'var(--clr-accent)' }}>ℹ️ About Tenali</strong>
             </button>
+            <PmHamburgerItem onOpen={() => { setMenuOpen(false); setPmOpen(true); }} />
             {/* Visual Learning Universe & GeoCraft pinned at top of hamburger menu */}
             {[mathLabEntry, geocraftEntry].map(app => (
               <button key={app.key} onClick={() => {
@@ -45863,18 +45659,6 @@ function Home({ onSelect, onBackToLanding, completedTopics = [], goldMastery = [
             </button>
 
             {filteredHamburgerApps.map(app => (
-              <button key={app.key} onClick={() => { setMenuOpen(false); onSelect(app.key) }} style={{
-                display: 'block', width: '100%', textAlign: 'left', padding: '10px 16px',
-                background: 'none', border: 'none', cursor: 'pointer', color: 'var(--clr-text)',
-                fontFamily: 'var(--font-body)', fontSize: '0.95rem', transition: 'background var(--transition)'
-              }} onMouseEnter={e => e.target.style.background = 'var(--clr-hover-strong)'}
-                onMouseLeave={e => e.target.style.background = 'none'}>
-                <strong style={{ color: 'var(--clr-accent)' }}>{app.name}</strong>
-                <span style={{ display: 'block', fontSize: '0.78rem', color: 'var(--clr-text-soft)', marginTop: '2px' }}>{app.subtitle}</span>
-              </button>
-            ))}
-
-            {featuredApps.map(app => (
               <button key={app.key} onClick={() => { setMenuOpen(false); onSelect(app.key) }} style={{
                 display: 'block', width: '100%', textAlign: 'left', padding: '10px 16px',
                 background: 'none', border: 'none', cursor: 'pointer', color: 'var(--clr-text)',
@@ -45954,6 +45738,7 @@ function Home({ onSelect, onBackToLanding, completedTopics = [], goldMastery = [
           </button>
         </div>
       )}
+      {!search && !isGoalSelection && <PmQuestBanner onSelect={onSelect} />}
       {!search && !isGoalSelection && (
         <DailyWarmupCard completedTopics={completedTopics} apiBase={API} onSelectTopic={onSelect} />
       )}
@@ -45967,6 +45752,7 @@ function Home({ onSelect, onBackToLanding, completedTopics = [], goldMastery = [
           onChange={e => setSearch(e.target.value)}
         />
       </div>
+      {!search && !isGoalSelection && <PmHomeSection onSelect={onSelect} onOpenGoalPicker={() => setPmOpen(true)} />}
       <div id="tour-home-grid" className="menu-grid" ref={gridRef}>
         {filteredRegular.map((app) => {
           const isGold = goldMastery && goldMastery.includes(app.key)
@@ -45984,6 +45770,7 @@ function Home({ onSelect, onBackToLanding, completedTopics = [], goldMastery = [
         })}
       </div>
       <div className="grid-dimension">{rows} × {cols}</div>
+      <PmGoalModal open={pmOpen} onClose={() => setPmOpen(false)} onSelect={onSelect} />
     </>
   )
 }
@@ -65580,15 +65367,15 @@ function CustomApp({ onBack, isGoalMode = false }) {
    */
   
   const handleTimeout = async () => {
-    if (typeof revealed !== 'undefined' && revealed) return
-    if (typeof finished !== 'undefined' && finished) return
-    if (typeof phase !== 'undefined' && phase === 'finished') return
-    try { if (typeof setIsCorrect !== 'undefined') setIsCorrect(false) } catch(_) {}
-    try { if (typeof setRevealed !== 'undefined') setRevealed(true) } catch(_) {}
-    try { if (typeof setFeedback !== 'undefined') setFeedback("⏰ Time's up!") } catch(_) {}
+    if (revealed) return
+    if (phase === 'finished') return
+    try { setIsCorrect(false) } catch(_) {}
+    try { setRevealed(true) } catch(_) {}
+    try { setFeedback("⏰ Time's up!") } catch(_) {}
     const timeTaken = timer.stop ? timer.stop() : 0
     const qPrompt = question ? (question.prompt || question.question || (question.n1 !== undefined ? `${question.n1} ${question.op || '+'} ${question.n2}` : 'Question')) : 'Question'
     try {
+      const apiPath = getApiPathForType(curType || 'basicarith')
       const r = await fetch(`${API}/${apiPath}/check`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': authGetToken() ? `Bearer ${authGetToken()}` : '' },
@@ -65600,7 +65387,7 @@ function CustomApp({ onBack, isGoalMode = false }) {
         setResults(prev => [...prev, { prompt: qPrompt, question: qPrompt, userAnswer: '(timeout)', correctAnswer: corrAns, correct: false, time: timeTaken }])
       }
       if (sessionGoal === 'perfect') {
-        try { if (typeof setFinished === 'function') setFinished(true); if (typeof setPhase === 'function') setPhase('finished'); timer.reset() } catch(_) {}
+        try { setPhase('finished'); timer.reset() } catch(_) {}
       }
     } catch(e) {
       console.error('handleTimeout error:', e)
@@ -68773,39 +68560,8 @@ function RiyaApp({ onBack, isGoalMode = false }) {
   }, [phase, revealed, selected, optionOrder, quizIdx, unitIdx, perQuestion, activeIndices])
 
   // ── Helpers ─────────────────────────────────────────────────────
-  
-  const handleTimeout = async () => {
-    if (typeof revealed !== 'undefined' && revealed) return
-    if (typeof finished !== 'undefined' && finished) return
-    if (typeof phase !== 'undefined' && phase === 'finished') return
-    try { if (typeof setIsCorrect !== 'undefined') setIsCorrect(false) } catch(_) {}
-    try { if (typeof setRevealed !== 'undefined') setRevealed(true) } catch(_) {}
-    try { if (typeof setFeedback !== 'undefined') setFeedback("⏰ Time's up!") } catch(_) {}
-    const timeTaken = timer.stop ? timer.stop() : 0
-    const qPrompt = question ? (question.prompt || question.question || (question.n1 !== undefined ? `${question.n1} ${question.op || '+'} ${question.n2}` : 'Question')) : 'Question'
-    try {
-      const r = await fetch(`${API}/riya-api/check`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': authGetToken() ? `Bearer ${authGetToken()}` : '' },
-        body: JSON.stringify({ ...(typeof question !== 'undefined' ? question : {}), userAnswer: '', answer: '', sessionGoal })
-      })
-      const d = await r.json()
-      const corrAns = d.display || d.correctAnswer || d.answer || '—'
-      if (typeof setResults === 'function') {
-        setResults(prev => [...prev, { prompt: qPrompt, question: qPrompt, userAnswer: '(timeout)', correctAnswer: corrAns, correct: false, time: timeTaken }])
-      }
-      if (sessionGoal === 'perfect') {
-        try { if (typeof setFinished === 'function') setFinished(true); if (typeof setPhase === 'function') setPhase('finished'); timer.reset() } catch(_) {}
-      }
-    } catch(e) {
-      console.error('handleTimeout error:', e)
-      if (typeof setResults === 'function') {
-        setResults(prev => [...prev, { prompt: qPrompt, question: qPrompt, userAnswer: '(timeout)', correctAnswer: '—', correct: false, time: timeTaken }])
-      }
-    }
-  }
 
-const startQuiz = () => {
+  const startQuiz = () => {
     setPhase('quiz')
     setQuizIdx(0)
     setPerQuestion([])
@@ -69121,7 +68877,7 @@ const startQuiz = () => {
  *     y = mx + C for each. If either y is out of the plot window [-7, 7],
  *     retry. This guarantees a tidy integer answer and visible points.
  */
-function TatsavitLineApp({ onBack }) {
+function TatsavitLineApp({ onBack, isGoalMode = false }) {
   // `round` is just a counter that forces regeneration on Next
   const [round, setRound] = useState(0)
   // Point coordinates are stored as strings so the inputs stay editable

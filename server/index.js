@@ -53,6 +53,7 @@ const http = require('http');
 const wordCreator = require('./wordCreator');
 const logger = require('./lib/logger');
 const { getStreakMilestoneBonus } = require('./lib/streak');
+const { randomInt, digitRange, gcd, lcm, simplifyFraction, pick } = require('./lib/mathHelpers');
 const { generateExplanation } = require('./explanations');
 
 // Catch what would otherwise be a silent crash (or, for unhandled promise
@@ -676,17 +677,19 @@ app.use('/dotprodgym-api', advancedRouter);
 const { sudokuIsValid, sudokuSolve, sudokuGenerate } = require('./lib/sudoku');
 
 /**
- * Generate a random integer between min and max (inclusive)
- * @param {number} min - Minimum value (inclusive)
- * @param {number} max - Maximum value (inclusive)
- * @returns {number} Random integer in range [min, max]
+ * Map square root approximation step level to a numeric band
+ * Higher steps = larger numbers to approximate square roots for
+ * Used for progressive difficulty in sqrt-api
+ * @param {number} step - Step number (1 to 100+)
+ * @returns {object} {min, max} range of numbers for sqrt estimation
  */
-function randomInt(min, max) {
-  return Math.floor(Math.random() * (max - min + 1)) + min;
+function bandForStep(step) {
+  if (step <= 10) return { min: 2, max: 50 };
+  if (step <= 20) return { min: 51, max: 150 };
+  if (step <= 35) return { min: 151, max: 350 };
+  if (step <= 60) return { min: 351, max: 700 };
+  return { min: 701, max: 999 };
 }
-function gcd(a, b) { a = Math.abs(a); b = Math.abs(b); while (b) { const t = b; b = a % b; a = t; } return a; }
-function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
-
 
 /**
  * Reads all JSON files in `dir` concurrently (fs.promises.readFile lets libuv's
@@ -1120,7 +1123,6 @@ const conceptQuestions = loadConcepts();
 const banks = require('./lib/question-banks');
 banks.concepts = conceptQuestions;
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // LEARNING JOURNEY ENDPOINTS
 // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 const { JOURNEY_CURRICULUM } = require('./lil/learning_journey/journeyData');
@@ -1478,17 +1480,36 @@ const compiler = require('./compiler');
 app.get('/api/playground2/languages', (req, res) => {
   try {
     const langs = compiler.listLanguages();
-    res.json({ languages: langs });
+    res.json({ enabled: compiler.isSandboxed(), languages: langs });
   } catch (e) {
     logger.error(null,'[playground2] list error:', e.message);
     res.status(500).json({ error: 'Failed to list languages' });
   }
 });
 
-app.post('/api/playground2/run', async (req, res) => {
+// Running submitted code is the most dangerous thing this server does, so the
+// route is closed three ways: it needs a signed-in user, it is rate limited per
+// IP, and it refuses outright while no isolated sandbox exists (503). The last is
+// what actually protects the host; the first two limit who could use it once a
+// sandbox is in place.
+const playground2Limiter = rateLimit({
+  windowMs: 60 * 1000,
+  limit: 20,
+  standardHeaders: 'draft-7',
+  legacyHeaders: false,
+  message: { error: 'Too many runs. Please wait a minute.' },
+});
+
+app.post('/api/playground2/run', auth.requireAuth, playground2Limiter, async (req, res) => {
   try {
-    const { language, code, stdin, timeout } = req.body;
-    if (!language || !code) {
+    if (!compiler.isSandboxed()) {
+      return res.status(503).json({
+        status: 'DISABLED',
+        error: 'The code playground is switched off until it can run code in an isolated sandbox.',
+      });
+    }
+    const { language, code, stdin, timeout } = req.body || {};
+    if (typeof language !== 'string' || typeof code !== 'string' || !language || !code) {
       return res.status(400).json({ error: 'language and code required' });
     }
     const result = await compiler.executeCode(language, code, stdin || '', timeout);
@@ -1519,7 +1540,12 @@ app.get('/enhanced', (_req, res) => {
   res.sendFile(path.join(__dirname, '..', 'enhanced', 'index.html'));
 });
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// serves the shared node/edge data used by PathMap
+app.get(['/graph-data.json', '/graph/graph-data.json'], (_req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'graph', 'graph-data.json'));
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
 // LEARNING TRANSFER CHALLENGES & PROGRESS SYNC API
 // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
@@ -2321,7 +2347,8 @@ function generateBattleQ_basicarith() {
 }
 function generateBattleQ_hcflcm() {
   const type = pick(['hcf', 'lcm']);
-  const a = randomInt(2, 50), b = randomInt(2, 50);
+  const a = randomInt(2, 50); let b = randomInt(2, 50);
+  while (b === a) { b = randomInt(2, 50); }
   const g = gcd(a, b);
   return { prompt: type === 'hcf' ? `HCF of ${a} and ${b}` : `LCM of ${a} and ${b}`,
     answer: type === 'hcf' ? g : (a * b) / g, type: 'number' };

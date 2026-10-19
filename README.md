@@ -26,7 +26,7 @@
 
 ---
 
-### ✨ **93 puzzle types across 69 topic areas · Algorithmically generated · Adaptive difficulty · Live multiplayer · Step-by-step solutions**
+### ✨ **93 puzzle types (API routes) across 69 topic areas (graph nodes) · Algorithmically generated · Adaptive difficulty · Live multiplayer · Step-by-step solutions**
 
 </div>
 ## 🧠 Pedagogical Features: Progressive & Interactive Learning
@@ -125,7 +125,7 @@ Learning JSON → learnContent.js → Learning Page → Interactive Components
 
 Tenali (named after the legendary **Tenali Raman** — the witty Indian scholar who outwitted entire courts with logic) is an **adaptive math learning platform** featuring algorithmically-generated puzzle types, real-time multiplayer battles, and step-by-step solutions for every problem. Every question is generated on the fly — there is no question database — so practice is infinite and never repeats. Difficulty adapts to each learner in real time.
 
-There isn't one canonical "puzzle count" — different parts of the codebase group content differently, and that's worth naming instead of collapsing into a single number: the server exposes **93 distinct `*-api` route pairs** (the real unit of "a puzzle type"), grouped under **69 topic areas** in the `/graph` prerequisite map, and the home-screen tile registry (`client/src/features/tiles.js`) lists **100+ tiles**, because several route pairs surface as more than one tile (e.g. an MCQ "gym" drill and a full-form drill on the same topic, via `foldInto`). Use whichever number matches what you're actually counting.
+There isn't one canonical "puzzle count" — different parts of the codebase group content differently, and that's worth naming instead of collapsing into a single number: the server exposes **93 distinct `*-api` route pairs** (the real unit of "a puzzle type"), grouped under **69 topic areas** in the `/graph` prerequisite map, and the home-screen tile registry (`client/src/features/tiles.js`) lists **101 tiles**, because several route pairs surface as more than one tile (e.g. an MCQ "gym" drill and a full-form drill on the same topic, via `foldInto`). Use whichever number matches what you're actually counting.
 
 It is built to run on a single VPS — `tenali.fun` — with one Node process serving the React app, the puzzle APIs, the JWT auth, the Socket.IO Battle Arena, and the multi-language code playground.
 
@@ -137,12 +137,12 @@ It is built to run on a single VPS — `tenali.fun` — with one Node process se
 <p align="center">
   <table>
     <tr>
-      <td align="center"><b>1052</b><br/><sub>commits</sub></td>
-      <td align="center"><b>111</b><br/><sub>PRs merged</sub></td>
-      <td align="center"><b>42</b><br/><sub>GitHub contributors</sub></td>
-      <td align="center"><b>⭐ 7</b><br/><sub>stars</sub></td>
-      <td align="center"><b>🍴 80</b><br/><sub>forks</sub></td>
-      <td align="center"><b>🐛 125</b><br/><sub>open issues</sub></td>
+      <td align="center"><b>1169</b><br/><sub>commits</sub></td>
+      <td align="center"><b>131</b><br/><sub>PRs merged</sub></td>
+      <td align="center"><b>50</b><br/><sub>GitHub contributors</sub></td>
+      <td align="center"><b>⭐ 16</b><br/><sub>stars</sub></td>
+      <td align="center"><b>🍴 101</b><br/><sub>forks</sub></td>
+      <td align="center"><b>🐛 111</b><br/><sub>open issues</sub></td>
     </tr>
   </table>
 </p>
@@ -357,7 +357,7 @@ JWT auth with **fail-fast** in production, `express-rate-limit`, CORS allowlist,
 </details>
 
 <details>
-<summary><b>📐 Algebra (15 types)</b></summary>
+<summary><b>📐 Algebra (14 types)</b></summary>
 
 | | Type | Endpoint |
 |:-:|-------|----------|
@@ -375,7 +375,6 @@ JWT auth with **fail-fast** in production, `express-rate-limit`, CORS allowlist,
 | 40 | Binomial Theorem | `/binomial-api` |
 | 41 | Functions Evaluation | `/funceval-api` |
 | 42 | Functions Gym (MCQ) | `/funcgym-api` |
-| 43 | Variation Direct/Indirect | `/variation-api` |
 
 </details>
 
@@ -384,20 +383,20 @@ JWT auth with **fail-fast** in production, `express-rate-limit`, CORS allowlist,
 
 | | Type | Endpoint |
 |:-:|-------|----------|
-| 44 | Trig (SOH-CAH-TOA) | `/trig-api` |
-| 45 | Inverse Trig | `/invtrig-api` |
-| 46 | Circular Measure | `/circmeasure-api` |
-| 47 | Inequalities | `/ineq-api` |
-| 48 | Coordinate Geometry | `/coordgeom-api` |
-| 49 | Section Formula | `/section-api` |
-| 50 | Linear Programming | `/linprog-api` |
-| 51 | Probability | `/prob-api` |
-| 52 | Permutations & Combinations | `/permcomb-api` |
-| 53 | Statistics | `/stats-api` |
-| 54 | Sets | `/sets-api` |
-| 55 | Bearings | `/bearings-api` |
-| 56 | Matrices | `/matrix-api` |
-| 57 | Linear Algebra (56 missions) | `/linearalgebra-api` |
+| 43 | Trig (SOH-CAH-TOA) | `/trig-api` |
+| 44 | Inverse Trig | `/invtrig-api` |
+| 45 | Circular Measure | `/circmeasure-api` |
+| 46 | Inequalities | `/ineq-api` |
+| 47 | Coordinate Geometry | `/coordgeom-api` |
+| 48 | Section Formula | `/section-api` |
+| 49 | Linear Programming | `/linprog-api` |
+| 50 | Probability | `/prob-api` |
+| 51 | Permutations & Combinations | `/permcomb-api` |
+| 52 | Statistics | `/stats-api` |
+| 53 | Sets | `/sets-api` |
+| 54 | Bearings | `/bearings-api` |
+| 55 | Matrices | `/matrix-api` |
+| 56 | Linear Algebra (56 missions) | `/linearalgebra-api` |
 
 </details>
 
@@ -406,48 +405,51 @@ JWT auth with **fail-fast** in production, `express-rate-limit`, CORS allowlist,
 
 | | Type | Endpoint |
 |:-:|-------|----------|
-| 58 | LA Mission Quiz | `/la-mission-quiz-api` |
-| 59 | Vectors | `/vectors-api` |
-| 60 | Dot Products | `/dotprod-api` |
-| 61 | Dot Products Gym (MCQ) | `/dotprodgym-api` |
-| 62 | Transformations | `/transform-api` |
-| 63 | Mensuration | `/mensur-api` |
+| 57 | LA Mission Quiz | `/la-mission-quiz-api` |
+| 58 | Vectors | `/vectors-api` |
+| 59 | Dot Products | `/dotprod-api` |
+| 60 | Dot Products Gym (MCQ) | `/dotprodgym-api` |
+| 61 | Transformations | `/transform-api` |
+| 62 | Mensuration | `/mensur-api` |
 
 </details>
 
 <details>
-<summary><b>🎯 Calculus, Puzzles & Games (15+ types)</b></summary>
+<summary><b>🎯 Calculus, Puzzles & Games (31 types)</b></summary>
 
 | | Type | Endpoint |
 |:-:|-------|----------|
-| 64 | Pythagoras' Theorem | `/pythag-api` |
-| 65 | Heron's Formula | `/heron-api` |
-| 66 | Circle Theorems | `/circleth-api` |
-| 67 | Circle Geometry | `/circle-api` |
-| 68 | Logarithms | `/log-api` |
-| 69 | Differentiation | `/diff-api` |
-| 70 | Differential Equations | `/diffeq-api` |
-| 71 | Integration | `/integ-api` |
-| 72 | Limits | `/limits-api` |
-| 73 | Conic Sections | `/conics-api` |
-| 74 | Complex Numbers | `/complex-api` |
-| 75 | Angles | `/angles-api` |
-| 76 | Triangles | `/triangles-api` |
-| 77 | Polygons | `/polygons-api` |
-| 78 | Congruence | `/congruence-api` |
-| 79 | Similarity | `/similarity-api` |
-| 80 | Visual Math | `/visual-math-api` |
-| 81 | Conceptual | `/concept-api` |
-| 82 | Vocabulary (7,662 words) | `/vocab-api` |
-| 83 | GK (991 questions) | `/gk-api` |
-| 84 | Tatsavit | `/tatsavit-api` |
-| 85 | Sudoku | `/sudoku-api` |
-| 86 | Transfer scenarios | `/transfer-api` |
-| 87 | Darts | `/darts-api` |
-| 88 | Riddles | `/riddle-api` |
-| 89 | Square Root | `/sqrt-api` |
-| 90 | Squaring | `/squaring-api` |
-| 91 | Curiosity | `/curiosity-api` |
+| 63 | Pythagoras' Theorem | `/pythag-api` |
+| 64 | Heron's Formula | `/heron-api` |
+| 65 | Circle Theorems | `/circleth-api` |
+| 66 | Logarithms | `/log-api` |
+| 67 | Differentiation | `/diff-api` |
+| 68 | Differential Equations | `/diffeq-api` |
+| 69 | Integration | `/integ-api` |
+| 70 | Limits | `/limits-api` |
+| 71 | Conic Sections | `/conics-api` |
+| 72 | Complex Numbers | `/complex-api` |
+| 73 | Angles | `/angles-api` |
+| 74 | Triangles | `/triangles-api` |
+| 75 | Polygons | `/polygons-api` |
+| 76 | Congruence | `/congruence-api` |
+| 77 | Similarity | `/similarity-api` |
+| 78 | Visual Math | `/visual-math-api` |
+| 79 | Conceptual | `/concept-api` |
+| 80 | Vocabulary (7,662 words) | `/vocab-api` |
+| 81 | GK (991 questions) | `/gk-api` |
+| 82 | Tatsavit | `/tatsavit-api` |
+| 83 | Sudoku | `/sudoku-api` |
+| 84 | Transfer scenarios | `/transfer-api` |
+| 85 | Darts | `/darts-api` |
+| 86 | Riddles | `/riddle-api` |
+| 87 | Square Root | `/sqrt-api` |
+| 88 | Squaring | `/squaring-api` |
+| 89 | Curiosity | `/curiosity-api` |
+| 90 | Contrast | `/contrast-api` |
+| 91 | Matrix Mystics | `/matrixmystics-api` |
+| 92 | Treasure Hunt | `/treasurehunt-api` |
+| 93 | Word Creator | `/wordcreator-api` |
 
 </details>
 
@@ -568,6 +570,16 @@ The Express server serves `client/dist/` statically. See `render.yaml` for the R
 cd client && npm run lint
 ```
 
+### Test
+
+```bash
+cd client && npm test          # frontend unit tests (Vitest + Testing Library, one-shot)
+cd client && npm run test:watch  # watch mode
+cd server && npm test          # server API tests
+```
+
+Frontend test conventions (naming, mocking `fetch`, `localStorage`, what is in scope) are documented in [CONTRIBUTING.md § Frontend Testing](CONTRIBUTING.md#frontend-testing). Tests target extracted modules such as `client/src/features/tiles.js` and `client/src/lib/concept/*` — testing the full `client/src/App.jsx` is out of scope until the component-extraction work progresses.
+
 ---
 
 ## 🧩 Add a New Puzzle
@@ -620,7 +632,7 @@ Go beyond the mission statement. Describe Tenali as a system: the users (student
 **3. Current State of the Repository — What Has Been Done So Far**
 Walk through the repository and describe what already exists:
 - Tech stack (frontend, backend, database, auth, deployment).
-- Implemented features (the 69 puzzle types, adaptive difficulty, Battle Arena multiplayer, step-by-step explanations, the code playground, auth, etc.).
+- Implemented features (the 93 puzzle types, adaptive difficulty, Battle Arena multiplayer, step-by-step explanations, the code playground, auth, etc.).
 
 **4. Gaps Observed in the Code**
 This is the most important section. List concrete weaknesses, bugs, missing features, or design problems you found while reading the code. You can also pick issues stated on the Tenali GitHub repo and solve them. For each gap, include:
@@ -690,58 +702,66 @@ tenali.fun
 <!-- live-snapshot:start -->
 | 🏆 Commits | 🔀 Merged PRs | 👥 Contributors | 🧩 Puzzles | 📚 Vocab | 🌍 GK |
 |----------:|------------:|--------------:|---------:|-------:|----:|
-| **1052** | **111** | **42** | **93** | **7,662** | **991** |
+| **1169** | **131** | **50** | **93** | **7,662** | **991** |
 <!-- live-snapshot:end -->
 
 ### 🥇 Leaderboard
 
 <!-- live-rank:start -->
-_Live data — last regenerated 2026-09-22 · auto-refreshed by [`github-actions[bot]`](https://github.com/features/actions) on every push to `main` and every 12h._
+_Live data — last regenerated 2026-10-18 · auto-refreshed by [`github-actions[bot]`](https://github.com/features/actions) on every push to `main` and every 12h._
 
 | # | 👤 Real Name | 🔗 GitHub ID | 📝 Commits | 🔀 PRs | 🏷️ Role |
 |--:|:-------------|:-------------|----------:|-----:|:--------|
-| 🥇 | **S. R. S. Iyengar**<br/><sub>↳ also commits as <b>sudarshan</b></sub> | [sudarshansudarshan](https://github.com/sudarshansudarshan) | **281** | 0  | Lead Architect · Curriculum Author · 69 puzzle families |
-| 🥈 | **Mudit Agrawal** | [muditagrawal2007](https://github.com/muditagrawal2007) | **193** | 25  | Maintainer · Battle Arena · Linear Algebra · Sudoku · Playground |
-| 🥉 | **Jinal Gupta** | [jgupta05072003-code](https://github.com/jgupta05072003-code) | **127** | 0  | Upstream Repo Maintainer & PR Reviewer |
+| 🥇 | **S. R. S. Iyengar**<br/><sub>↳ also commits as <b>sudarshan</b></sub> | [sudarshansudarshan](https://github.com/sudarshansudarshan) | **281** | 0  | Lead Architect · Curriculum Author · 69 topic areas |
+| 🥈 | **25f2002654**<br/><sub>↳ also commits as <b>Mudit Agrawal</b></sub> | [muditagrawal2007](https://github.com/muditagrawal2007) | **193** | 25  | Maintainer · Battle Arena · Linear Algebra · Sudoku · Playground |
+| 🥉 | **Jinal Gupta** | [jgupta05072003-code](https://github.com/jgupta05072003-code) | **147** | 0  | Upstream Repo Maintainer & PR Reviewer |
 | 4. | **Priyanshu Kumar** | [priyanshu7725](https://github.com/priyanshu7725) | **54** | 1  | — |
-| 5. | **Vaibhav Satish**<br/><sub>↳ also commits as <b>Vaibhav</b></sub> | [Vaibhav-sa30](https://github.com/Vaibhav-sa30) | **48** | 3  | Vachana Literacy Lab & Vocabulary |
+| 5. | **Vaibhav Satish**<br/><sub>↳ also commits as <b>Vaibhav</b></sub> | [Vaibhav-sa30](https://github.com/Vaibhav-sa30) | **50** | 3  | Vachana Literacy Lab & Vocabulary |
 | 6. | **Lakshmi Varshini Nandula ** | [varshini-nandula](https://github.com/varshini-nandula) | **43** | 1  | Profile Showcase & Offline Storage |
 | 7. | **Sameer Mishra** | [24F3005086](https://github.com/24F3005086) | **36** | 4  | i18n · Accessibility · Concept Labs |
 | 8. | **DIPTOSUBHRO DATTA**<br/><sub>↳ also commits as <b>Dipto Subhro</b></sub> | [diptosubhro-ctrl](https://github.com/diptosubhro-ctrl) | **33** | 1  | Tutorial System + Noise Filter Refactor |
-| 9. | **Ritish Karmakar** | [Ritish007-svg](https://github.com/Ritish007-svg) | **27** | 1  | Percentages Level-wise Explanation |
-| 10. | **saniyajos**<br/><sub>↳ also commits as <b>SaniyaJos</b></sub> | [saniyajos](https://github.com/saniyajos) | **22** | 0  | — |
-| 11. | **K C Dharshan** | [KCDharshan9](https://github.com/KCDharshan9) | **21** | 1  | Tap-to-Define Word Glossary |
-| 12. | **Ahana Banerjee** | [ahana4banerjee](https://github.com/ahana4banerjee) | **20** | 2  | Goal Practice & Learning Journey |
-| 13. | **harshyy07** | [harshyy07](https://github.com/harshyy07) | **16** | 1  | — |
-| 14. | **Shubh Dixit**<br/><sub>↳ also commits as <b>Shubh dixit</b></sub> | [Shubhdix9](https://github.com/Shubhdix9) | **16** | 2  | Premium UI Suite + Word Games |
-| 15. | **athira**<br/><sub>↳ also commits as <b>Athira</b></sub> | [athira](https://github.com/athira) | **15** | 0  | — |
-| 16. | **jinal-gupta**<br/><sub>↳ also commits as <b>JINAL GUPTA</b></sub> | [jinal-gupta](https://github.com/jinal-gupta) | **12** | 0  | — |
-| 17. | **tanvish desai** | [tanvishdesai](https://github.com/tanvishdesai) | **9** | 2  | — |
-| 18. | **shreejal-bangera**<br/><sub>↳ also commits as <b>Shreejal Bangera</b></sub> | [shreejal-bangera](https://github.com/shreejal-bangera) | **8** | 0  | — |
-| 19. | **Krishna Gelra** | [KrishnaG-101](https://github.com/KrishnaG-101) | **7** | 2  | Language Puzzles Framework |
-| 20. | **ayushkochhar**<br/><sub>↳ also commits as <b>AYUSHKOCHHAR</b></sub> | [ayushkochhar](https://github.com/ayushkochhar) | **6** | 0  | — |
-| 21. | **krishna009-pro**<br/><sub>↳ also commits as <b>Krishna009-pro</b></sub> | [krishna009-pro](https://github.com/krishna009-pro) | **6** | 0  | — |
-| 22. | **SemiColonSlayer** | [sharonyamita-spec](https://github.com/sharonyamita-spec) | **6** | 1  | Math Detective Agency |
-| 23. | **PANDRAJU POORVI PRAVALLIKA** | [poorvipravallika06](https://github.com/poorvipravallika06) | **6** | 1  | HCF/LCM Interactive Module |
-| 24. | **cursor-agent**<br/><sub>↳ also commits as <b>Cursor Agent</b></sub> | [cursor-agent](https://github.com/cursor-agent) | **5** | 0  | — |
-| 25. | **Rukmender T** | [RukmenderT](https://github.com/RukmenderT) | **5** | 1  | Curiosity Mode |
-| 26. | **Disha Bansal** | [disha01bansal](https://github.com/disha01bansal) | **4** | 0  | — |
-| 27. | **pradeep-gupta7**<br/><sub>↳ also commits as <b>Pradeep-gupta7</b></sub> | [pradeep-gupta7](https://github.com/pradeep-gupta7) | **3** | 0  | — |
-| 28. | **S. Hamsalekha**<br/><sub>↳ also commits as <b>S Hamsalekha</b></sub> | [S-Hamsalekha-annamai](https://github.com/S-Hamsalekha-annamai) | **3** | 1  | Track User Progress |
-| 29. | **nirmal-np**<br/><sub>↳ also commits as <b>Nirmal_np</b></sub> | [nirmal-np](https://github.com/nirmal-np) | **2** | 0  | — |
-| 30. | **lalithasriharshitha**<br/><sub>↳ also commits as <b>LalithaSriHarshitha</b></sub> | [lalithasriharshitha](https://github.com/lalithasriharshitha) | **2** | 0  | — |
-| 31. | **disha-singh**<br/><sub>↳ also commits as <b>Disha Singh</b></sub> | [disha-singh](https://github.com/disha-singh) | **2** | 0  | — |
-| 32. | **Remy baastin rayappan** | [remy-baastin](https://github.com/remy-baastin) | **2** | 1  | — |
-| 33. | **harsh**<br/><sub>↳ also commits as <b>Harsh</b></sub> | [harsh](https://github.com/harsh) | **2** | 0  | — |
-| 34. | **Anshul Kanodia** | [AnshulKanodia](https://github.com/AnshulKanodia) | **2** | 0  | Geometry Game Restoration |
-| 35. | **sharad**<br/><sub>↳ also commits as <b>Sharad</b></sub> | [sharad](https://github.com/sharad) | **1** | 0  | — |
-| 36. | **dynosuprovo**<br/><sub>↳ also commits as <b>DYNOSuprovo</b></sub> | [dynosuprovo](https://github.com/dynosuprovo) | **1** | 0  | — |
-| 37. | **athira-kv**<br/><sub>↳ also commits as <b>Athira Kv</b></sub> | [athira-kv](https://github.com/athira-kv) | **1** | 0  | — |
-| 38. | **code-zero07**<br/><sub>↳ also commits as <b>Code-Zero07</b></sub> | [code-zero07](https://github.com/code-zero07) | **1** | 0  | — |
-| 39. | **garv-arora**<br/><sub>↳ also commits as <b>Garv Arora</b></sub> | [garv-arora](https://github.com/garv-arora) | **1** | 0  | — |
-| 40. | **pradeep-gupta**<br/><sub>↳ also commits as <b>Pradeep Gupta</b></sub> | [pradeep-gupta](https://github.com/pradeep-gupta) | **1** | 0  | — |
-| 41. | **priyanshu-kumar**<br/><sub>↳ also commits as <b>Priyanshu Kumar</b></sub> | [priyanshu-kumar](https://github.com/priyanshu-kumar) | **1** | 0  | — |
-| 42. | **Vasuki** | [vasuki-tenali](https://github.com/vasuki-tenali) | **1** | 0  | Infra contributor |
+| 9. | **bithika-jain**<br/><sub>↳ also commits as <b>Bithika-Jain</b></sub> | [bithika-jain](https://github.com/bithika-jain) | **32** | 0  | — |
+| 10. | **Ritish Karmakar** | [Ritish007-svg](https://github.com/Ritish007-svg) | **27** | 1  | Percentages Level-wise Explanation |
+| 11. | **saniyajos**<br/><sub>↳ also commits as <b>SaniyaJos</b></sub> | [saniyajos](https://github.com/saniyajos) | **22** | 0  | — |
+| 12. | **K C Dharshan** | [KCDharshan9](https://github.com/KCDharshan9) | **21** | 1  | Tap-to-Define Word Glossary |
+| 13. | **Ahana Banerjee** | [ahana4banerjee](https://github.com/ahana4banerjee) | **20** | 2  | Goal Practice & Learning Journey |
+| 14. | **ayush**<br/><sub>↳ also commits as <b>Ayush</b></sub> | [ayush](https://github.com/ayush) | **19** | 0  | — |
+| 15. | **harshi** | [harshyy07](https://github.com/harshyy07) | **16** | 1  | — |
+| 16. | **Shubh Dixit**<br/><sub>↳ also commits as <b>Shubh dixit</b></sub> | [Shubhdix9](https://github.com/Shubhdix9) | **16** | 2  | Premium UI Suite + Word Games |
+| 17. | **athira**<br/><sub>↳ also commits as <b>Athira</b></sub> | [athira](https://github.com/athira) | **15** | 0  | — |
+| 18. | **Krishna Gelra** | [KrishnaG-101](https://github.com/KrishnaG-101) | **12** | 2  | Language Puzzles Framework |
+| 19. | **jinal-gupta**<br/><sub>↳ also commits as <b>JINAL GUPTA</b></sub> | [jinal-gupta](https://github.com/jinal-gupta) | **12** | 0  | — |
+| 20. | **lalithasriharshitha**<br/><sub>↳ also commits as <b>LalithaSriHarshitha</b></sub> | [lalithasriharshitha](https://github.com/lalithasriharshitha) | **10** | 0  | — |
+| 21. | **tanvish desai** | [tanvishdesai](https://github.com/tanvishdesai) | **9** | 2  | — |
+| 22. | **shreejal-bangera**<br/><sub>↳ also commits as <b>Shreejal Bangera</b></sub> | [shreejal-bangera](https://github.com/shreejal-bangera) | **8** | 0  | — |
+| 23. | **cursor-agent**<br/><sub>↳ also commits as <b>Cursor Agent</b></sub> | [cursor-agent](https://github.com/cursor-agent) | **6** | 0  | — |
+| 24. | **ayushkochhar**<br/><sub>↳ also commits as <b>AYUSHKOCHHAR</b></sub> | [ayushkochhar](https://github.com/ayushkochhar) | **6** | 0  | — |
+| 25. | **krishna009-pro**<br/><sub>↳ also commits as <b>Krishna009-pro</b></sub> | [krishna009-pro](https://github.com/krishna009-pro) | **6** | 0  | — |
+| 26. | **SemiColonSlayer** | [sharonyamita-spec](https://github.com/sharonyamita-spec) | **6** | 1  | Math Detective Agency |
+| 27. | **PANDRAJU POORVI PRAVALLIKA** | [poorvipravallika06](https://github.com/poorvipravallika06) | **6** | 1  | HCF/LCM Interactive Module |
+| 28. | **tarang-rajvanshi**<br/><sub>↳ also commits as <b>Tarang Rajvanshi</b></sub> | [tarang-rajvanshi](https://github.com/tarang-rajvanshi) | **5** | 0  | — |
+| 29. | **tenzai-aj**<br/><sub>↳ also commits as <b>Tenzai-AJ</b></sub> | [tenzai-aj](https://github.com/tenzai-aj) | **5** | 0  | — |
+| 30. | **Rukmender T** | [RukmenderT](https://github.com/RukmenderT) | **5** | 1  | Curiosity Mode |
+| 31. | **Ayush Mishra** | [codefixxx](https://github.com/codefixxx) | **4** | 2  | — |
+| 32. | **Anshul Kanodia** | [AnshulKanodia](https://github.com/AnshulKanodia) | **4** | 1  | Geometry Game Restoration |
+| 33. | **sharad**<br/><sub>↳ also commits as <b>Sharad</b></sub> | [sharad](https://github.com/sharad) | **4** | 0  | — |
+| 34. | **sharad-**<br/><sub>↳ also commits as <b>Sharad.</b></sub> | [sharad-](https://github.com/sharad-) | **4** | 0  | — |
+| 35. | **Disha Bansal** | [disha01bansal](https://github.com/disha01bansal) | **4** | 0  | — |
+| 36. | **sai-sowjanya-meka**<br/><sub>↳ also commits as <b>Sai Sowjanya Meka</b></sub> | [sai-sowjanya-meka](https://github.com/sai-sowjanya-meka) | **3** | 0  | — |
+| 37. | **yummypancake2607**<br/><sub>↳ also commits as <b>yummyPancake2607</b></sub> | [yummypancake2607](https://github.com/yummypancake2607) | **3** | 0  | — |
+| 38. | **pradeep-gupta7**<br/><sub>↳ also commits as <b>Pradeep-gupta7</b></sub> | [pradeep-gupta7](https://github.com/pradeep-gupta7) | **3** | 0  | — |
+| 39. | **S. Hamsalekha**<br/><sub>↳ also commits as <b>S Hamsalekha</b></sub> | [S-Hamsalekha-annamai](https://github.com/S-Hamsalekha-annamai) | **3** | 1  | Track User Progress |
+| 40. | **code-zero07**<br/><sub>↳ also commits as <b>Code-Zero07</b></sub> | [code-zero07](https://github.com/code-zero07) | **2** | 0  | — |
+| 41. | **nirmal-np**<br/><sub>↳ also commits as <b>Nirmal_np</b></sub> | [nirmal-np](https://github.com/nirmal-np) | **2** | 0  | — |
+| 42. | **disha-singh**<br/><sub>↳ also commits as <b>Disha Singh</b></sub> | [disha-singh](https://github.com/disha-singh) | **2** | 0  | — |
+| 43. | **Remy baastin rayappan** | [remy-baastin](https://github.com/remy-baastin) | **2** | 1  | — |
+| 44. | **harsh**<br/><sub>↳ also commits as <b>Harsh</b></sub> | [harsh](https://github.com/harsh) | **2** | 0  | — |
+| 45. | **dynosuprovo**<br/><sub>↳ also commits as <b>DYNOSuprovo</b></sub> | [dynosuprovo](https://github.com/dynosuprovo) | **1** | 0  | — |
+| 46. | **athira-kv**<br/><sub>↳ also commits as <b>Athira Kv</b></sub> | [athira-kv](https://github.com/athira-kv) | **1** | 0  | — |
+| 47. | **garv-arora**<br/><sub>↳ also commits as <b>Garv Arora</b></sub> | [garv-arora](https://github.com/garv-arora) | **1** | 0  | — |
+| 48. | **pradeep-gupta**<br/><sub>↳ also commits as <b>Pradeep Gupta</b></sub> | [pradeep-gupta](https://github.com/pradeep-gupta) | **1** | 0  | — |
+| 49. | **priyanshu-kumar**<br/><sub>↳ also commits as <b>Priyanshu Kumar</b></sub> | [priyanshu-kumar](https://github.com/priyanshu-kumar) | **1** | 0  | — |
+| 50. | **Vasuki** | [vasuki-tenali](https://github.com/vasuki-tenali) | **1** | 0  | Infra contributor |
 <!-- live-rank:end -->
 
 
