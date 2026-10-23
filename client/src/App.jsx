@@ -47964,39 +47964,32 @@ function GKApp({ onBack, markTopicCompleted, isGoalMode = false }) {
     if (!question || revealed) return
     const timeTaken = timer.stop()
     setSelected(option)
-    try {
-      // POST to backend API to check the answer
-      const res = await fetch(`${API}/gk-api/check`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': authGetToken() ? `Bearer ${authGetToken()}` : '' }, body: JSON.stringify({  id: question.id, answerOption: option, sessionGoal }) })
-      const data = await res.json()
-      setIsCorrect(data.correct)
-      if (data.correct) setScore((s) => s + 1);
-      // Show feedback with explanation
-      (() => {
-          const _ci = data.lil?.coinsEarned > 0 ? ` (+${data.lil.coinsEarned} coins!)` : ''
-          const ansText = data.correctAnswerText || ''
-          const ansOpt = data.correctAnswer || ''
-          if (data.correct) {
-            setFeedback(`Correct! The answer is ${ansOpt}) ${ansText}` + _ci)
-          } else if (sessionGoal === 'perfect') {
-            setFeedback(`Incorrect. The correct answer is ${ansOpt}) ${ansText}` + ' ❌ Perfect Solve ended.')
-            setFinished(true); timer.reset()
-          } else {
-            setFeedback(`Incorrect. The correct answer is ${ansOpt}) ${ansText}`)
-          }
-        })()
-      // Record result for display
-      setResults((prev) => [...prev, {
-        question: question.question.length > 50 ? question.question.slice(0, 50) + '…' : question.question,
-        userAnswer: option,
-        correctAnswer: `${data.correctAnswer || ''}) ${data.correctAnswerText || ''}`,
-        correct: data.correct,
-        time: timeTaken,
-      }])
-    } catch (err) {
-      console.error('Failed to submit GK answer:', err)
-    } finally {
-      setRevealed(true)
-    }
+    // POST to backend API to check the answer
+    const res = await fetch(`${API}/gk-api/check`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': authGetToken() ? `Bearer ${authGetToken()}` : '' }, body: JSON.stringify({  id: question.id, answerOption: option, sessionGoal }) })
+    const data = await res.json()
+    setIsCorrect(data.correct)
+    if (data.correct) setScore((s) => s + 1);
+    // Show feedback with explanation
+    (() => {
+        const _ci = data.lil?.coinsEarned > 0 ? ` (+${data.lil.coinsEarned} coins!)` : ''
+        if (data.correct) {
+          setFeedback(`Correct! The answer is ${data.correctAnswer}) ${data.correctAnswerText}`.slice(0,-1) + _ci + `Correct! The answer is ${data.correctAnswer}) ${data.correctAnswerText}`.slice(-1))
+        } else if (sessionGoal === 'perfect') {
+          setFeedback(`Incorrect. The correct answer is ${data.correctAnswer}) ${data.correctAnswerText}` + ' ❌ Perfect Solve ended.')
+          setFinished(true); timer.reset()
+        } else {
+          setFeedback(`Incorrect. The correct answer is ${data.correctAnswer}) ${data.correctAnswerText}`)
+        }
+      })()
+    // Record result for display
+    setResults((prev) => [...prev, {
+      question: question.question.length > 50 ? question.question.slice(0, 50) + '…' : question.question,
+      userAnswer: option,
+      correctAnswer: `${data.correctAnswer}) ${data.correctAnswerText}`,
+      correct: data.correct,
+      time: timeTaken,
+    }])
+    setRevealed(true)
   }
 
   /**
@@ -48015,29 +48008,24 @@ function GKApp({ onBack, markTopicCompleted, isGoalMode = false }) {
    * Fetches the correct answer from the API with solve: true flag
    */
   const handleSolve = async () => {
-    if (revealed || !question) return
+    if (revealed) return
     const timeTaken = timer.stop()
-    try {
-      // POST to backend API with solve flag to get the solution
-      const res = await fetch(`${API}/gk-api/check`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': authGetToken() ? `Bearer ${authGetToken()}` : '' }, body: JSON.stringify({  id: question.id, answerOption: '', solve: true, sessionGoal }) })
-      const data = await res.json()
-      setIsCorrect(false)
-      const display = data.correctAnswer || ''
-      const displayText = `${display}) ${data.correctAnswerText || ''}`
-      const explanation = data.explanation || ''
-      setFeedback(`Solution: ${displayText}${explanation ? '\n' + explanation : ''}`)
-      setResults((prev) => [...prev, {
-        question: question.question.length > 50 ? question.question.slice(0, 50) + '…' : question.question,
-        userAnswer: '—',
-        correctAnswer: displayText,
-        correct: false,
-        time: timeTaken,
-      }])
-    } catch (err) {
-      console.error('Failed to solve GK question:', err)
-    } finally {
-      setRevealed(true)
-    }
+    // POST to backend API with solve flag to get the solution
+    const res = await fetch(`${API}/gk-api/check`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': authGetToken() ? `Bearer ${authGetToken()}` : '' }, body: JSON.stringify({  id: question.id, answerOption: '', solve: true, sessionGoal }) })
+    const data = await res.json()
+    setIsCorrect(false)
+    const display = data.correctAnswer || ''
+    const displayText = `${display}) ${data.correctAnswerText || ''}`
+    const explanation = data.explanation || ''
+    setFeedback(`Solution: ${displayText}${explanation ? '\n' + explanation : ''}`)
+    setResults((prev) => [...prev, {
+      question: question.question.length > 50 ? question.question.slice(0, 50) + '…' : question.question,
+      userAnswer: '—',
+      correctAnswer: displayText,
+      correct: false,
+      time: timeTaken,
+    }])
+    setRevealed(true)
   }
 
   // Auto-advance after correct answer
@@ -48130,11 +48118,7 @@ function GKApp({ onBack, markTopicCompleted, isGoalMode = false }) {
             {question.options.map((option, idx) => {
               const letter = ['A', 'B', 'C', 'D'][idx]
               return (
-                <label
-                  key={letter}
-                  className={`option-card ${selected === letter ? 'selected' : ''} ${revealed && letter === selected && !isCorrect ? 'option-wrong' : ''} ${revealed && (results.length > 0 && letter === results[results.length - 1]?.correctAnswer?.charAt(0)) ? 'option-correct' : ''}`}
-                  onClick={() => !revealed && setSelected(letter)}
-                >
+                <label key={letter} className={`option-card ${selected === letter ? 'selected' : ''}`}>
                   <input type="radio" name="gk" checked={selected === letter} onChange={() => !revealed && setSelected(letter)} disabled={revealed} />
                   <span><strong>{letter})</strong> {option}</span>
                 </label>
@@ -52265,23 +52249,11 @@ const fetchQuestion = async () => {
     return () => window.removeEventListener('keydown', onKeyDown)
   }, [started, finished, question, answer, revealed, score, questionNumber, difficulty, loading, totalQ])
 
-  const computeLocalAnswer = (q) => {
-    if (!q) return NaN
-    const a = Number(q.a)
-    const b = Number(q.b)
-    const op = String(q.op || '').trim()
-    if (op === '+' || op === 'add') return a + b
-    if (op === '−' || op === '-' || op === 'sub') return a - b
-    if (op === '×' || op === '*' || op === 'x' || op === 'X' || op === 'mul') return a * b
-    if (op === '÷' || op === '/' || op === 'div') return b !== 0 ? a / b : 0
-    return q.answer !== undefined ? Number(q.answer) : NaN
-  }
-
   /**
    * handleSubmitOrNext(): Submission and progression handler for BasicArithmeticApp
    * Phase 1 (not revealed):
    *   - Stop timer and POST user answer to /basicarith-api/check endpoint
-   *   - Receive { correct, correctAnswer } or fallback to local computation
+   *   - Receive { correct, correctAnswer }
    *   - Show feedback and store result, then reveal answer
    * Phase 2 (revealed):
    *   - If all questions answered, finish quiz
@@ -52292,114 +52264,58 @@ const fetchQuestion = async () => {
     if (!revealed) {
       if (answer === '') return
       const timeTaken = timer.stop()
-      let isAnswerCorrect = false
-      let expectedAns = computeLocalAnswer(question)
-      let bonusCoins = ''
-
-      try {
-        const res = await fetch(`${API}/basicarith-api/check`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': authGetToken() ? `Bearer ${authGetToken()}` : ''
-          },
-          body: JSON.stringify({ a: question.a, b: question.b, op: question.op, answer: Number(answer), sessionGoal })
-        })
-        if (res.ok) {
-          const data = await res.json()
-          isAnswerCorrect = !!data.correct
-          if (data.correctAnswer !== undefined && !Number.isNaN(Number(data.correctAnswer))) {
-            expectedAns = Number(data.correctAnswer)
-          }
-          if (data.lil?.coinsEarned > 0) {
-            bonusCoins = ` (+${data.lil.coinsEarned} coins!)`
-          }
+      // POST to backend to validate answer for arithmetic operation: a op b
+      const res = await fetch(`${API}/basicarith-api/check`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': authGetToken() ? `Bearer ${authGetToken()}` : '' }, body: JSON.stringify({  a: question.a, b: question.b, op: question.op, answer: Number(answer), sessionGoal }) })
+      const data = await res.json()
+      setIsCorrect(data.correct)
+      if (data.correct) setScore(s => s + 1);
+      (() => {
+        const _ci = data.lil?.coinsEarned > 0 ? ` (+${data.lil.coinsEarned} coins!)` : ''
+        if (data.correct) {
+          setFeedback(`Correct! ${question.prompt} = ${data.correctAnswer}`.slice(0,-1) + _ci + `Correct! ${question.prompt} = ${data.correctAnswer}`.slice(-1))
+        } else if (sessionGoal === 'perfect') {
+          setFeedback(`Incorrect. ${question.prompt} = ${data.correctAnswer}` + ' ❌ Perfect Solve ended.')
+          setFinished(true); timer.reset()
         } else {
-          isAnswerCorrect = Number(answer) === expectedAns
+          setFeedback(`Incorrect. ${question.prompt} = ${data.correctAnswer}`)
         }
-      } catch (err) {
-        console.warn('Backend check offline or unavailable, using client-side validation:', err)
-        isAnswerCorrect = Number(answer) === expectedAns
-      }
-
-      setIsCorrect(isAnswerCorrect)
-      if (isAnswerCorrect) setScore(s => s + 1)
-
-      if (isAnswerCorrect) {
-        setFeedback(`Correct! ${question.prompt} = ${expectedAns}${bonusCoins}`)
-      } else if (sessionGoal === 'perfect') {
-        setFeedback(`Incorrect. ${question.prompt} = ${expectedAns} ❌ Perfect Solve ended.`)
-        setFinished(true)
-        timer.reset()
-      } else {
-        setFeedback(`Incorrect. ${question.prompt} = ${expectedAns}`)
-      }
-
+      })()
       // Store result with time taken
       setResults(prev => [...prev, {
         question: question.prompt,
         userAnswer: answer,
-        correctAnswer: String(expectedAns),
-        correct: isAnswerCorrect,
+        correctAnswer: String(data.correctAnswer),
+        correct: data.correct,
         time: timeTaken,
       }])
-
       if (isAdaptive) {
-        setAdaptScore(prev => {
-          const next = isAnswerCorrect ? Math.min(3, prev + 0.25) : Math.max(0, prev - 0.35)
-          adaptScoreRef.current = next
-          return next
-        })
+        setAdaptScore(prev => { const next = data.correct ? Math.min(3, prev + 0.25) : Math.max(0, prev - 0.35); adaptScoreRef.current = next; return next })
       }
       setRevealed(true)
       return
     }
-
     // Quiz progression: check if quiz is finished
-    if (questionNumber >= totalQ) {
-      setFinished(true)
-      setQuestion(null)
-      timer.reset()
-      return
-    }
+    if (questionNumber >= totalQ) { setFinished(true); setQuestion(null); timer.reset(); return }
     setQuestionNumber(n => n + 1)
     await fetchQuestion()
   }
 
   /**
    * handleSolve(): Get the solution without submitting an answer
-   * Fetches the correct answer from the API with solve: true flag, or computes locally
+   * Fetches the correct answer from the API with solve: true flag
    */
   const handleSolve = async () => {
-    if (revealed || !question) return
+    if (revealed) return
     const timeTaken = timer.stop()
-    let expectedAns = computeLocalAnswer(question)
-
-    try {
-      const res = await fetch(`${API}/basicarith-api/check`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': authGetToken() ? `Bearer ${authGetToken()}` : ''
-        },
-        body: JSON.stringify({ a: question.a, b: question.b, op: question.op, answer: '', solve: true, sessionGoal })
-      })
-      if (res.ok) {
-        const data = await res.json()
-        if (data.correctAnswer !== undefined && !Number.isNaN(Number(data.correctAnswer))) {
-          expectedAns = Number(data.correctAnswer)
-        }
-      }
-    } catch (err) {
-      console.warn('Backend solve request failed, using local computation:', err)
-    }
-
+    // POST to backend API with solve flag to get the solution
+    const res = await fetch(`${API}/basicarith-api/check`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': authGetToken() ? `Bearer ${authGetToken()}` : '' }, body: JSON.stringify({  a: question.a, b: question.b, op: question.op, answer: '', solve: true, sessionGoal }) })
+    const data = await res.json()
     setIsCorrect(false)
-    setFeedback(`Solution: ${question.prompt} = ${expectedAns}`)
+    setFeedback(`Solution: ${question.prompt} = ${data.correctAnswer}`)
     setResults(prev => [...prev, {
       question: question.prompt,
       userAnswer: '—',
-      correctAnswer: String(expectedAns),
+      correctAnswer: String(data.correctAnswer),
       correct: false,
       time: timeTaken,
     }])
@@ -53687,6 +53603,9 @@ function MultiplyApp({ onBack, completedTopics = [], goldMastery = [], markTopic
   }, [isGoalMode]);
   const l3TimerRef = useRef(null)
   const l3DeadlineRef = useRef(0)
+  // Always points at the latest handleLevel3Timeout so the countdown interval
+  // never runs a stale closure (e.g. question === null on the first question).
+  const l3TimeoutRef = useRef(null)
   const timer = useTimer()
 
   useEffect(() => {
@@ -53705,15 +53624,19 @@ function MultiplyApp({ onBack, completedTopics = [], goldMastery = [], markTopic
   }, [phase, score, results.length, level, markTopicCompleted])
 
   // ─── Helpers ──────────────────────────────────────────────────────────
-  const nextQuestion = (planArr, index) => {
+  // `lvl` is passed explicitly by the level launchers: they call setLevel() and
+  // nextQuestion() in the same tick, so the `level` state here is still stale.
+  const nextQuestion = (planArr, index, lvl = level) => {
     const q = planArr[index]
     setQuestion({ table: q.table, multiplier: q.multiplier, prompt: `${q.table} × ${q.multiplier}` })
     setAnswer('')
     setFeedback('')
     setRevealed(false)
     setIsCorrect(null)
-    timer.start(sessionGoal, handleTimeout, getSpeedRunLimit(difficulty ?? 'easy', isAdaptive ?? false))
-    if (level === 3) startLevel3Countdown()
+    // Count-up timer only: MultiplyApp has no handleTimeout/difficulty/isAdaptive,
+    // and Level 3 runs its own countdown below.
+    timer.start()
+    if (lvl === 3) startLevel3Countdown()
   }
 
   const startLevel3Countdown = () => {
@@ -53727,7 +53650,7 @@ function MultiplyApp({ onBack, completedTopics = [], goldMastery = [], markTopic
         clearInterval(l3TimerRef.current)
         l3TimerRef.current = null
         // Timeout = wrong answer; record and advance immediately.
-        handleLevel3Timeout()
+        l3TimeoutRef.current?.()
       }
     }, 200)
   }
@@ -53748,7 +53671,7 @@ function MultiplyApp({ onBack, completedTopics = [], goldMastery = [], markTopic
     setRoundTotalTime(0); setRoundQuestionsCount(0)
     setSourceTables(MULT_TABLES.slice())
     setPhase('quiz')
-    nextQuestion(p, 0)
+    nextQuestion(p, 0, 1)
   }
 
   const beginLevel2Setup = () => {
@@ -53773,7 +53696,7 @@ function MultiplyApp({ onBack, completedTopics = [], goldMastery = [], markTopic
     setRoundTotalTime(0); setRoundQuestionsCount(0)
     setSourceTables(tables)
     setPhase('quiz')
-    nextQuestion(initial, 0)
+    nextQuestion(initial, 0, 2)
   }
 
   const startLevel3 = () => {
@@ -53785,7 +53708,7 @@ function MultiplyApp({ onBack, completedTopics = [], goldMastery = [], markTopic
     setPhase('quiz')
     const first = buildExtensionBatch(MULT_TABLES, 1)[0]
     setPlan([first])
-    nextQuestion([first], 0)
+    nextQuestion([first], 0, 3)
   }
 
   // ─── Submission paths ─────────────────────────────────────────────────
@@ -53907,6 +53830,8 @@ function MultiplyApp({ onBack, completedTopics = [], goldMastery = [], markTopic
     setQIndex(qIndex + 1)
     nextQuestion(nextPlan, qIndex + 1)
   }
+
+  useEffect(() => { l3TimeoutRef.current = handleLevel3Timeout })
 
   const exitLevel3 = () => {
     stopLevel3Countdown()
@@ -54134,7 +54059,6 @@ function VocabApp({ onBack, isGoalMode = false }) {
   const [feedback, setFeedback] = useState('')
   // Is the last answer correct? (null before submission, true/false after)
   const [isCorrect, setIsCorrect] = useState(null)
-  const [correctOption, setCorrectOption] = useState('')
   // API call in progress?
   const [loading, setLoading] = useState(false)
   // Number of correct answers so far
@@ -54196,29 +54120,16 @@ const loadQuestion = async (excludeIds) => {
     setSelected('')
     setFeedback('')
     setIsCorrect(null)
-    setCorrectOption('')
     setRevealed(false)
     const ids = excludeIds || seenIds
     const excludeParam = ids.length ? `&exclude=${ids.join(',')}` : ''
-    try {
-      const res = await fetch(`${API}/vocab-api/question?difficulty=${effectiveDiff()}&goal=${sessionGoal}`, { headers: { 'Authorization': authGetToken() ? `Bearer ${authGetToken()}` : '' } })
-      
-      if (!res.ok) {
-        throw new Error('Failed to fetch question from server');
-      }
-      
-      const data = await res.json()
-      setQuestion(data)
-      const newSeen = [...ids, data.id]
-      setSeenIds(newSeen)
-      saveVocabSeen(newSeen)
-    } catch (err) {
-      console.error(err);
-      setFeedback('Failed to connect to the server. Please ensure the backend is running.');
-      setQuestion({ question: 'Server Offline', options: [] });
-    } finally {
-      setLoading(false)
-    }
+    const res = await fetch(`${API}/vocab-api/question?difficulty=${effectiveDiff()}&goal=${sessionGoal}`, { headers: { 'Authorization': authGetToken() ? `Bearer ${authGetToken()}` : '' } })
+    const data = await res.json()
+    setQuestion(data)
+    const newSeen = [...ids, data.id]
+    setSeenIds(newSeen)
+    saveVocabSeen(newSeen)
+    setLoading(false)
     timer.start(sessionGoal, handleTimeout, getSpeedRunLimit(difficulty ?? 'easy', isAdaptive ?? false))
   }
 
@@ -54254,44 +54165,38 @@ const loadQuestion = async (excludeIds) => {
     if (!question || revealed) return
     const timeTaken = timer.stop()
     setSelected(option)
-    try {
-      // POST to backend to validate the selected definition
-      const res = await fetch(`${API}/vocab-api/check`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': authGetToken() ? `Bearer ${authGetToken()}` : '' }, body: JSON.stringify({  id: question.id, answerOption: option, sessionGoal }) })
-      const data = await res.json()
-      const isAnsCorrect = Boolean(data.correct)
-      setIsCorrect(isAnsCorrect)
-      if (isAnsCorrect) setScore((s) => s + 1)
-      if (data.correctAnswer) setCorrectOption(data.correctAnswer)
-      const ansText = data.correctAnswerText || ''
-      // Show feedback with correct answer text
-      const _ci = data.lil?.coinsEarned > 0 ? ` (+${data.lil.coinsEarned} coins!)` : ''
-      if (isAnsCorrect) {
-        setFeedback(`Correct! "${ansText}"` + _ci)
-      } else if (sessionGoal === 'perfect') {
-        setFeedback(`Incorrect. The right definition is: "${ansText}" ❌ Perfect Solve ended.`)
-        setFinished(true); timer.reset()
-      } else {
-        setFeedback(`Incorrect. The right definition is: "${ansText}"`)
-      }
-      // Extract the user's selected definition from options array
-      const userDef = question.options[['A', 'B', 'C', 'D'].indexOf(option)] || ''
-      // Truncate long definitions to fit in results table
-      const truncate = (s) => (s && typeof s === 'string' && s.length > 35) ? s.slice(0, 35) + '…' : (s || '')
-      setResults((prev) => [...prev, {
-        question: question.question,
-        userAnswer: truncate(userDef),
-        correctAnswer: truncate(ansText),
-        correct: isAnsCorrect,
-        time: timeTaken,
-      }])
-      if (isAdaptive) {
-        setAdaptScore(prev => { const next = isAnsCorrect ? Math.min(3, prev + 0.25) : Math.max(0, prev - 0.35); adaptScoreRef.current = next; return next })
-      }
-    } catch (err) {
-      console.error('submitVocab error:', err)
-    } finally {
-      setRevealed(true)
+    // POST to backend to validate the selected definition
+    const res = await fetch(`${API}/vocab-api/check`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': authGetToken() ? `Bearer ${authGetToken()}` : '' }, body: JSON.stringify({  id: question.id, answerOption: option, sessionGoal }) })
+    const data = await res.json()
+    setIsCorrect(data.correct)
+    if (data.correct) setScore((s) => s + 1);
+    // Show feedback with correct answer text
+    (() => {
+        const _ci = data.lil?.coinsEarned > 0 ? ` (+${data.lil.coinsEarned} coins!)` : ''
+        if (data.correct) {
+          setFeedback(`Correct! "${data.correctAnswerText}"`.slice(0,-1) + _ci + `Correct! "${data.correctAnswerText}"`.slice(-1))
+        } else if (sessionGoal === 'perfect') {
+          setFeedback(`Incorrect. The right definition is: "${data.correctAnswerText}"` + ' ❌ Perfect Solve ended.')
+          setFinished(true); timer.reset()
+        } else {
+          setFeedback(`Incorrect. The right definition is: "${data.correctAnswerText}"`)
+        }
+      })()
+    // Extract the user's selected definition from options array
+    const userDef = question.options[['A', 'B', 'C', 'D'].indexOf(option)]
+    // Truncate long definitions to fit in results table
+    const truncate = (s) => s.length > 35 ? s.slice(0, 35) + '…' : s
+    setResults((prev) => [...prev, {
+      question: question.question,
+      userAnswer: truncate(userDef),
+      correctAnswer: truncate(data.correctAnswerText),
+      correct: data.correct,
+      time: timeTaken,
+    }])
+    if (isAdaptive) {
+      setAdaptScore(prev => { const next = data.correct ? Math.min(3, prev + 0.25) : Math.max(0, prev - 0.35); adaptScoreRef.current = next; return next })
     }
+    setRevealed(true)
   }
 
   /**
@@ -54314,31 +54219,24 @@ const loadQuestion = async (excludeIds) => {
    * Fetches the correct answer from the API with solve: true flag
    */
   const handleSolve = async () => {
-    if (revealed || !question) return
+    if (revealed) return
     const timeTaken = timer.stop()
-    try {
-      // POST to backend API with solve flag to get the solution
-      const res = await fetch(`${API}/vocab-api/check`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': authGetToken() ? `Bearer ${authGetToken()}` : '' }, body: JSON.stringify({  id: question.id, answerOption: '', solve: true, sessionGoal }) })
-      const data = await res.json()
-      setIsCorrect(false)
-      if (data.correctAnswer) setCorrectOption(data.correctAnswer)
-      const ansText = data.correctAnswerText || ''
-      // Show feedback with correct answer text
-      setFeedback(`Solution: "${ansText}"`)
-      // Truncate long definitions to fit in results table
-      const truncate = (s) => (s && typeof s === 'string' && s.length > 35) ? s.slice(0, 35) + '…' : (s || '')
-      setResults((prev) => [...prev, {
-        question: question.question,
-        userAnswer: '—',
-        correctAnswer: truncate(ansText),
-        correct: false,
-        time: timeTaken,
-      }])
-    } catch (err) {
-      console.error('handleSolve error:', err)
-    } finally {
-      setRevealed(true)
-    }
+    // POST to backend API with solve flag to get the solution
+    const res = await fetch(`${API}/vocab-api/check`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': authGetToken() ? `Bearer ${authGetToken()}` : '' }, body: JSON.stringify({  id: question.id, answerOption: '', solve: true, sessionGoal }) })
+    const data = await res.json()
+    setIsCorrect(false)
+    // Show feedback with correct answer text
+    setFeedback(`Solution: "${data.correctAnswerText}"`)
+    // Truncate long definitions to fit in results table
+    const truncate = (s) => s.length > 35 ? s.slice(0, 35) + '…' : s
+    setResults((prev) => [...prev, {
+      question: question.question,
+      userAnswer: '—',
+      correctAnswer: truncate(data.correctAnswerText),
+      correct: false,
+      time: timeTaken,
+    }])
+    setRevealed(true)
   }
 
   useEffect(() => {
@@ -54462,11 +54360,7 @@ const loadQuestion = async (excludeIds) => {
             {question.options.map((option, idx) => {
               const letter = ['A', 'B', 'C', 'D'][idx]
               return (
-                <label
-                  key={letter}
-                  className={`option-card ${selected === letter ? 'selected' : ''} ${revealed && letter === selected && !isCorrect ? 'option-wrong' : ''} ${revealed && (letter === correctOption || (results.length > 0 && letter === ['A', 'B', 'C', 'D'][question.options.indexOf(results[results.length - 1]?.correctAnswer)])) ? 'option-correct' : ''}`}
-                  onClick={() => !revealed && setSelected(letter)}
-                >
+                <label key={letter} className={`option-card ${selected === letter ? 'selected' : ''} ${revealed && letter === selected && !isCorrect ? 'option-wrong' : ''} ${revealed && question && letter === ['A', 'B', 'C', 'D'][question.options.indexOf(results[results.length - 1]?.correctAnswer)] ? 'option-correct' : ''}`}>
                   <input type="radio" name="vocab" checked={selected === letter} onChange={() => !revealed && setSelected(letter)} disabled={revealed} />
                   <span><strong>{letter})</strong> {option}</span>
                 </label>
@@ -62205,7 +62099,8 @@ const generateRound = (n) => {
     setFeedback('')
     setIsCorrect(null)
     setRevealed(false)
-    timer.start(sessionGoal, handleTimeout, getSpeedRunLimit(difficulty ?? 'easy', isAdaptive ?? false))
+    // TwinHuntApp has no difficulty/isAdaptive state, so use the 'easy', non-adaptive limit.
+    timer.start(sessionGoal, handleTimeout, getSpeedRunLimit('easy', false))
   }
 
   /**
@@ -62567,7 +62462,7 @@ const fetchQuestion = async (step) => {
       setIsCorrect(data.correct)
       if (data.correct) setScore((s) => s + 1)
       // Show floor and ceiling values for reference
-      const reasoning = `√${question.q} = ${data.sqrtRounded}\n⌊${data.sqrtRounded}⌋ = ${data.floorAnswer}, ⌈${data.sqrtRounded}⌉ = ${data.ceilAnswer}`;
+      const reasoning = `√${question.q} = ${data.sqrtRounded}\n⌊${data.sqrtRounded}⌋ = ${data.floorAnswer}, ⌈${data.sqrtRounded}⌉ = ${data.ceilAnswer}`
       (() => {
         const _ci = data.lil?.coinsEarned > 0 ? ` (+${data.lil.coinsEarned} coins!)` : ''
         if (data.correct) {
@@ -63216,7 +63111,7 @@ const loadQuestion = async () => {
     // Increment score if correct
     if (data.correct) setScore(s => s + 1)
     // Format feedback message using correct factors (p, q, r, s from question.factors)
-    const { p, q, r, s } = question.factors;
+    const { p, q, r, s } = question.factors
     (() => {
         const _ci = data.lil?.coinsEarned > 0 ? ` (+${data.lil.coinsEarned} coins!)` : ''
         if (data.correct) {
@@ -63891,7 +63786,7 @@ const loadQuestion = async () => {
     let correctStr = ''
     if (data.roots.type === 'real_distinct') correctStr = `Roots: ${data.roots.r1} and ${data.roots.r2}`
     else if (data.roots.type === 'real_equal') correctStr = `Root: ${data.roots.r1} (repeated)`
-    else correctStr = `Roots: ${data.roots.realPart} ± ${data.roots.imagPart}i`;
+    else correctStr = `Roots: ${data.roots.realPart} ± ${data.roots.imagPart}i`
     (() => {
         const _ci = data.lil?.coinsEarned > 0 ? ` (+${data.lil.coinsEarned} coins!)` : ''
         if (data.correct) {
@@ -64552,7 +64447,7 @@ const loadQuestion = async () => {
     setIsCorrect(data.correct)
     if (data.correct) setScore(s => s + 1)
     // Format variable string for feedback (e.g., "x=2, y=3")
-    const varStr = Object.entries(question.vars).map(([k, v]) => `${k}=${v}`).join(', ');
+    const varStr = Object.entries(question.vars).map(([k, v]) => `${k}=${v}`).join(', ')
     (() => {
         const _ci = data.lil?.coinsEarned > 0 ? ` (+${data.lil.coinsEarned} coins!)` : ''
         if (data.correct) {
@@ -64853,7 +64748,7 @@ const loadQuestion = async () => {
     const res = await fetch(`${API}/lineq-api/check`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': authGetToken() ? `Bearer ${authGetToken()}` : '' }, body: JSON.stringify({  x1: question.x1, y1: question.y1, x2: question.x2, y2: question.y2, userM: Number(userM), userC: Number(userC), sessionGoal }) })
     const data = await res.json()
     setIsCorrect(data.correct)
-    if (data.correct) setScore(s => s + 1);
+    if (data.correct) setScore(s => s + 1)
     // Format feedback message with correct m and c values
     (() => {
         const _ci = data.lil?.coinsEarned > 0 ? ` (+${data.lil.coinsEarned} coins!)` : ''
@@ -67855,13 +67750,11 @@ function Tatsavit1App({ onBack, isGoalMode = false }) {
           if (isRight) extra = 'selected'
           else if (isSel && !revealed) extra = 'selected'
           return (
-            <label key={i} className={`option-card ${extra}`}
-              onClick={() => !revealed && setSelected(i)}
-              style={{
-                borderColor: isRight ? 'var(--clr-correct)' : isWrongPick ? 'var(--clr-wrong)' : undefined,
-                background: isRight ? 'var(--clr-correct-bg)' : isWrongPick ? 'var(--clr-wrong-bg)' : undefined,
-                opacity: revealed && !isRight && !isWrongPick ? 0.7 : 1,
-              }}>
+            <label key={i} className={`option-card ${extra}`} style={{
+              borderColor: isRight ? 'var(--clr-correct)' : isWrongPick ? 'var(--clr-wrong)' : undefined,
+              background: isRight ? 'var(--clr-correct-bg)' : isWrongPick ? 'var(--clr-wrong-bg)' : undefined,
+              opacity: revealed && !isRight && !isWrongPick ? 0.7 : 1,
+            }}>
               <input type="radio" name="tatsavit1" checked={isSel}
                 onChange={() => !revealed && setSelected(i)} disabled={revealed} />
               <span><strong>{letter})</strong> {opt}</span>
@@ -68814,13 +68707,11 @@ function RiyaApp({ onBack, isGoalMode = false }) {
           if (isRight) extra = 'selected'
           else if (isSel && !revealed) extra = 'selected'
           return (
-            <label key={origIdx} className={`option-card ${extra}`}
-              onClick={() => !revealed && setSelected(origIdx)}
-              style={{
-                borderColor: isRight ? 'var(--clr-correct)' : isWrongPick ? 'var(--clr-wrong)' : undefined,
-                background: isRight ? 'var(--clr-correct-bg)' : isWrongPick ? 'var(--clr-wrong-bg)' : undefined,
-                opacity: revealed && !isRight && !isWrongPick ? 0.7 : 1,
-              }}>
+            <label key={origIdx} className={`option-card ${extra}`} style={{
+              borderColor: isRight ? 'var(--clr-correct)' : isWrongPick ? 'var(--clr-wrong)' : undefined,
+              background: isRight ? 'var(--clr-correct-bg)' : isWrongPick ? 'var(--clr-wrong-bg)' : undefined,
+              opacity: revealed && !isRight && !isWrongPick ? 0.7 : 1,
+            }}>
               <input type="radio" name="riya" checked={isSel}
                 onChange={() => !revealed && setSelected(origIdx)} disabled={revealed} />
               <span><strong>{letter})</strong> {opt}</span>
